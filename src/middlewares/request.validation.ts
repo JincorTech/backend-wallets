@@ -5,6 +5,20 @@ const options = {
   allowUnknown: true
 };
 
+export function WalletRegisterRequestValidator(req: Request, res: Response, next: NextFunction) {
+  const schema = Joi.object().keys({
+    //
+  });
+
+  const result = Joi.validate(req.body, schema, options);
+
+  if (result.error) {
+    return res.status(422).json(result);
+  } else {
+    return next();
+  }
+}
+
 export function TransactionInitiateRequestValidator(req: Request, res: Response, next: NextFunction) {
   const schema = Joi.object().keys({
     sender: Joi.string().hex().required(),

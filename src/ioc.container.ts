@@ -1,3 +1,4 @@
+import { Web3Client } from './services/web3.client';
 import { VerificationClient } from './services/verify.client';
 import { WalletRepository, MongoWalletRepository } from './services/repositories/wallet.repository';
 import { interfaces as InversifyInterfaces, Container } from 'inversify';
@@ -13,11 +14,12 @@ import { MongoDbConnector } from './services/repositories/mongodb.connector.serv
 import { MailjetService } from './services/mailjet.service';
 import { MailgunService } from './services/mailgun.service';
 import { ContractsClient } from './services/contracts.client';
+import { AuthMiddleware } from './middlewares/common';
 
 let container = new Container();
 
 // services
-container.bind<auths.AuthenticationService>('AuthMiddleware')
+container.bind<auths.AuthenticationService>('AuthenticationService')
 .toDynamicValue((context: InversifyInterfaces.Context): auths.AuthenticationService => {
   return new auths.CachedAuthenticationDecorator(
     context.container.resolve(auths.ExternalHttpJwtAuthenticationService)
@@ -30,16 +32,22 @@ if (process.env.MAIL_DRIVER === 'mailjet') {
   container.bind<EmailServiceInterface>('EmailService').to(MailgunService).inSingletonScope();
 }
 container.bind<VerificationClient>('VerificationClient').to(VerificationClient).inSingletonScope();
+container.bind<Web3Client>('Web3Client').to(Web3Client).inSingletonScope();
 container.bind<ContractsClient>('ContractsClient').to(ContractsClient).inSingletonScope();
 container.bind<MongoDbConnector>('MongoDbConnector').to(MongoDbConnector).inSingletonScope();
 container.bind<WalletRepository>('WalletRepository').to(MongoWalletRepository).inSingletonScope();
 container.bind<TransactionRepository>('TransactionRepository').to(MongoTransactionRepository).inSingletonScope();
+
+container.bind<AuthMiddleware>('AuthMiddleware').to(AuthMiddleware);
 
 container.bind<express.RequestHandler>('TransactionInitiateRequestValidator').toConstantValue(
   (req: any, res: any, next: any) => validation.TransactionInitiateRequestValidator(req, res, next)
 );
 container.bind<express.RequestHandler>('TransactionVerifyRequestValidator').toConstantValue(
   (req: any, res: any, next: any) => validation.TransactionVerifyRequestValidator(req, res, next)
+);
+container.bind<express.RequestHandler>('WalletRegisterRequestValidator').toConstantValue(
+  (req: any, res: any, next: any) => validation.WalletRegisterRequestValidator(req, res, next)
 );
 
 // controllers

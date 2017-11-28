@@ -9,8 +9,6 @@ import { AuthenticationException } from './exceptions';
 import { VerificationResult } from '../interfaces';
 import { Logger } from '../logger';
 
-export const AuthenticationServiceType = Symbol('AuthenticationServiceType');
-
 /**
  * AuthenticationService interface
  */

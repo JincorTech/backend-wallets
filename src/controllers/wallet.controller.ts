@@ -1,3 +1,5 @@
+import { Web3Client } from '../services/web3.client';
+import { ContractsClient } from '../services/contracts.client';
 import * as lodash from 'lodash';
 import { Request, Response } from 'express';
 import { inject, injectable } from 'inversify';
@@ -17,6 +19,8 @@ import { AuthenticatedRequest } from '../interfaces';
 )
 export class WalletController implements interfaces.Controller {
   constructor(
+    @inject('Web3Client') private web3: Web3Client,
+    @inject('ContractsClient') private contracts: ContractsClient,
     @inject('WalletRepository') private walletRepository: WalletRepository
   ) {
   }
@@ -53,12 +57,20 @@ export class WalletController implements interfaces.Controller {
   }
 
   @httpPost(
-    '',
+    '/:type',
     'WalletRegisterRequestValidator'
   )
-  async registerWallets(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async registerEmployeeWallets(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const [companyId, userId] = req.params.login;
+      // const [companyId, userId] = req.user.login;
+
+      // const [ethAccount, hlfAccount] = await Promise.all([
+      //   this.web3.getAccountByMnemonicAndSalt(mnemonics, config.web3.salt),
+      //   this.contracts.registerUser(req.token, mnemonics)
+      // ]);
+
+      // ethAccount.address
+      // hlfAccount.address
 
       res.json({});
     } catch (error) {

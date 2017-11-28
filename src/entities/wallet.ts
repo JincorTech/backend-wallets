@@ -4,6 +4,8 @@ export class Wallet {
   ownerId: string;
   companyId: string;
   type: string;
+  mnemonics: string;
+  salt: string;
   address: string;
   balance: string;
   currency: string;

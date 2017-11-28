@@ -2,8 +2,10 @@ import { Employee } from './employee';
 
 export class Transaction {
   id: string;
-  employee: Employee;
+  from: string;
+  to: string;
   status: string;
+  details: string;
   amount: string;
   currency: string;
   date: number;

@@ -49,6 +49,7 @@ const {
   VERIFY_BASE_URL,
   VERIFY_TIMEOUT,
 
+  WEB3_SALT,
   WEB3_RESTORE_START_BLOCK
 } = process.env;
 
@@ -75,11 +76,12 @@ export default {
     frontendUrl: FRONTEND_URL
   },
   web3: {
+    salt: WEB3_SALT,
     startBlock: WEB3_RESTORE_START_BLOCK || 1
   },
   contracts: {
-    baseUrl: 'http://contracts:3000',
-    peers: ['peer0.network.jincor.com', 'peer1.network.jincor.com'],
+    baseUrl: process.env.CONTRACTS_BASE_URL,
+    peers: ['peer0.network.jincor.com','peer1.network.jincor.com'],
     network: 'jincormetanet',
     jincorToken: {
       address: '0001020304050607080900010203040506070809',

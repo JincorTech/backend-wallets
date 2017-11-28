@@ -8,21 +8,9 @@ const hdkey = require('ethereumjs-wallet/hdkey');
 import config from '../config';
 import 'reflect-metadata';
 
-export interface Web3ClientInterface {
-  sendTransactionByMnemonic(input: {}, mnemonic: string, salt: string): Promise<string>;
-
-  generateMnemonic(): string;
-
-  getAccountByMnemonicAndSalt(mnemonic: string, salt: string): any;
-
-  getEthBalance(address: string): Promise<string>;
-
-  sufficientBalance(input: {}): Promise<boolean>;
-}
-
 /* istanbul ignore next */
 @injectable()
-export class Web3Client implements Web3ClientInterface {
+export class Web3Client {
   web3: any;
 
   constructor() {

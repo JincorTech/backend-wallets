@@ -6,24 +6,17 @@ import 'reflect-metadata';
 
 import { responseWithError } from '../helpers/responses';
 import { AuthenticatedRequest } from '../interfaces';
-import { AuthenticationServiceType, AuthenticationService } from '../services/auth.service';
+import { AuthenticationService } from '../services/auth.service';
 import { AuthenticationException } from '../services/exceptions';
-
-// IoC
-export const AuthMiddlewareType = Symbol('AuthMiddlewareType');
+import { BaseMiddleware } from 'inversify-express-utils';
 
 /**
  * Authentication middleware.
  */
 @injectable()
-export class AuthMiddleware {
+export class AuthMiddleware extends BaseMiddleware {
   private expressBearer;
-
-  constructor(
-    @inject(AuthenticationServiceType) private authenticationService: AuthenticationService
-  ) {
-    this.expressBearer = expressBearerToken();
-  }
+  @inject('AuthenticationService') private authenticationService: AuthenticationService;
 
   /**
    * Execute authentication
@@ -32,10 +25,18 @@ export class AuthMiddleware {
    * @param res Response
    * @param next NextFunction
    */
-  async execute(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  public handler(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    if (!this.expressBearer) {
+      this.expressBearer = expressBearerToken();
+    }
     this.expressBearer(req, res, async() => {
+      const r = req as AuthenticatedRequest;
       try {
-        req.user = await this.authenticationService.validate(req.token);
+        r.user = await this.authenticationService.validate(r.token);
         next();
       } catch (error) {
         if (error instanceof AuthenticationException) {
