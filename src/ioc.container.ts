@@ -12,6 +12,7 @@ import { TransactionRepository, MongoTransactionRepository } from './services/re
 import { MongoDbConnector } from './services/repositories/mongodb.connector.service';
 import { MailjetService } from './services/mailjet.service';
 import { MailgunService } from './services/mailgun.service';
+import { ContractsClient } from './services/contracts.client';
 
 let container = new Container();
 
@@ -29,7 +30,7 @@ if (process.env.MAIL_DRIVER === 'mailjet') {
   container.bind<EmailServiceInterface>('EmailService').to(MailgunService).inSingletonScope();
 }
 container.bind<VerificationClient>('VerificationClient').to(VerificationClient).inSingletonScope();
-
+container.bind<ContractsClient>('ContractsClient').to(ContractsClient).inSingletonScope();
 container.bind<MongoDbConnector>('MongoDbConnector').to(MongoDbConnector).inSingletonScope();
 container.bind<WalletRepository>('WalletRepository').to(MongoWalletRepository).inSingletonScope();
 container.bind<TransactionRepository>('TransactionRepository').to(MongoTransactionRepository).inSingletonScope();

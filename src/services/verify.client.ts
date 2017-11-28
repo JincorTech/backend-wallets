@@ -11,27 +11,12 @@ export const EMAIL_VERIFICATION = 'email';
 /* istanbul ignore next */
 @injectable()
 export class VerificationClient implements VerificationClientInterface {
-  tenantToken: string;
-  baseUrl: string;
-
-  constructor(baseUrl: string = config.verify.baseUrl) {
-    request.defaults({
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      throwResponseError: true
-    });
-
-    this.baseUrl = baseUrl;
-    this.tenantToken = config.auth.accessJwt;
-  }
-
   async initiateVerification(method: string, data: InitiateData): Promise<InitiateResult> {
     const result = await request.json<InitiateResult>(`/methods/${ method }/actions/initiate`, {
-      baseUrl: this.baseUrl,
+      timeout: config.verify.timeout,
+      baseUrl: config.verify.baseUrl,
       auth: {
-        bearer: this.tenantToken
+        bearer: config.verify.accessJwt
       },
       method: 'POST',
       body: data
@@ -53,9 +38,10 @@ export class VerificationClient implements VerificationClientInterface {
   async validateVerification(method: string, id: string, input: ValidateVerificationInput): Promise<ValidationResult> {
     try {
       return await request.json<ValidationResult>(`/methods/${ method }/verifiers/${ id }/actions/validate`, {
-        baseUrl: this.baseUrl,
+        timeout: config.verify.timeout,
+        baseUrl: config.verify.baseUrl,
         auth: {
-          bearer: this.tenantToken
+          bearer: config.verify.accessJwt
         },
         method: 'POST',
         body: input
@@ -75,9 +61,10 @@ export class VerificationClient implements VerificationClientInterface {
 
   async invalidateVerification(method: string, id: string): Promise<void> {
     await request.json<Result>(`/methods/${ method }/verifiers/${ id }`, {
-      baseUrl: this.baseUrl,
+      timeout: config.verify.timeout,
+      baseUrl: config.verify.baseUrl,
       auth: {
-        bearer: this.tenantToken
+        bearer: config.verify.accessJwt
       },
       method: 'DELETE'
     });

@@ -2,6 +2,16 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+import * as request from 'web-request';
+
+request.defaults({
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  },
+  throwResponseError: true
+});
+
 const {
   LOGGING_LEVEL,
   LOGGING_FORMAT,
@@ -37,6 +47,7 @@ const {
   AUTH_TIMEOUT,
 
   VERIFY_BASE_URL,
+  VERIFY_TIMEOUT,
 
   WEB3_RESTORE_START_BLOCK
 } = process.env;
@@ -66,6 +77,18 @@ export default {
   web3: {
     startBlock: WEB3_RESTORE_START_BLOCK || 1
   },
+  contracts: {
+    baseUrl: 'http://contracts:3000',
+    peers: ['peer0.network.jincor.com', 'peer1.network.jincor.com'],
+    network: 'jincormetanet',
+    jincorToken: {
+      address: '0001020304050607080900010203040506070809',
+      abi: '[]'
+    }
+  },
+  companies: {
+    baseUrl: 'http://companies/api/v1'
+  },
   throttler: {
     prefix: 'request_throttler_',
     interval: THROTTLER_INTERVAL || 1000, // time window in milliseconds
@@ -79,7 +102,9 @@ export default {
     timeout: parseInt(AUTH_TIMEOUT, 10) || 10000
   },
   verify: {
-    baseUrl: VERIFY_BASE_URL
+    baseUrl: VERIFY_BASE_URL || 'http://verify:3000',
+    accessJwt: AUTH_ACCESS_JWT,
+    timeout: parseInt(VERIFY_TIMEOUT, 10) || 10000
   },
   ethRpc: {
     type: process.env.RPC_TYPE,

@@ -12,6 +12,9 @@ export class MongoDbConnector {
   ) {
   }
 
+  /**
+   *
+   */
   async getDb(): Promise<Db> {
     if (!this.db) {
       this.db = await MongoClient.connect(this.connectionConfig.url, {

@@ -38,6 +38,8 @@ export class MongoWalletRepository implements WalletRepository {
    * @param companyId
    */
   async getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Array<Wallet>> {
+    this.logger.debug('Query all by user and company', userId, companyId);
+
     const wallets: Array<Wallet> = await (await this.mongoConnector.getDb()).collection('wallets').find({
       ownerId: userId,
       companyId: companyId

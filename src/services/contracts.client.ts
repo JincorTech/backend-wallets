@@ -1,50 +1,75 @@
 import * as request from 'web-request';
 import { injectable } from 'inversify';
-const QR = require('qr-image');
 
 import config from '../config';
-import { NotCorrectVerificationCode, VerificationIsNotFound } from '../exceptions/exceptions';
+
+export interface RegisterResult {
+  username: string;
+  address: string;
+}
+
+export interface TransactionResult {
+  transaction: string;
+  result: any;
+}
 
 /* istanbul ignore next */
 @injectable()
 export class ContractsClient {
-  baseUrl: string;
-
-  constructor(baseUrl: string) {
-    request.defaults({
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+  // @TODO: To finish
+  async registerUser(jwtToken: string, login: string): Promise<RegisterResult> {
+    const result = await request.json<RegisterResult>(`/api/accounts`, {
+      baseUrl: config.contracts.baseUrl,
+      auth: {
+        bearer: jwtToken
       },
-      throwResponseError: true
+      method: 'post',
+      body: {
+        loginFromJwt: 'true',
+        password: login // It's dirty
+      }
     });
 
-    this.baseUrl = baseUrl;
+    return result;
   }
 
-  async sendJcrToken(): Promise<void> {
-    // const result = await request.json<InitiateResult>(`/methods/${ method }/actions/initiate`, {
-    //   baseUrl: this.baseUrl,
-    //   auth: {
-    //     bearer: this.tenantToken
-    //   },
-    //   method: 'POST',
-    //   body: data
-    // });
+  // @TODO: To finish
+  async transferJcrToken(jwtToken: string, toAddress: string, amount: string): Promise<TransactionResult> {
+    const result = await request.json<TransactionResult>(`/api/networks/${config.contracts.network}/contracts/${config.contracts.jincorToken.address}/actions/invoke`, {
+      baseUrl: config.contracts.baseUrl,
+      auth: {
+        bearer: jwtToken
+      },
+      method: 'post',
+      body: {
+        peers: config.contracts.peers,
+        abi: config.contracts.jincorToken.abi,
+        method: 'transfer',
+        args: [toAddress, amount],
+        commitTransaction: true
+      }
+    });
 
-    // result.method = method;
-    // delete result.code;
-    // if (result.totpUri) {
-    //   const buffer = QR.imageSync(result.totpUri, {
-    //     type: 'png',
-    //     size: 20
-    //   });
-    //   result.qrPngDataUri = 'data:image/png;base64,' + buffer.toString('base64');
-    // }
+    return result;
+  }
 
-    // return result;
+  // @TODO: To finish
+  async getBalance(jwtToken: string, address: string): Promise<TransactionResult> {
+    const result = await request.json<TransactionResult>(`/api/networks/${config.contracts.network}/contracts/${config.contracts.jincorToken.address}/actions/invoke`, {
+      baseUrl: config.contracts.baseUrl,
+      auth: {
+        bearer: jwtToken
+      },
+      method: 'post',
+      body: {
+        peers: config.contracts.peers,
+        abi: config.contracts.jincorToken.abi,
+        method: 'getBalance',
+        args: [address],
+        commitTransaction: false
+      }
+    });
+
+    return result;
   }
 }
-
-const ContractsClientType = Symbol('ContractsClientInterface');
-export { ContractsClientType };

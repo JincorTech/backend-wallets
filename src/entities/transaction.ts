@@ -1,12 +1,8 @@
+import { Employee } from './employee';
+
 export class Transaction {
   id: string;
-  employee: {
-    id: string;
-    wallet: string;
-    firstName: string;
-    lastName: string;
-    avatar: string
-  };
+  employee: Employee;
   status: string;
   amount: string;
   currency: string;

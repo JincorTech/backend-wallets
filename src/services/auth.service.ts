@@ -35,13 +35,6 @@ export class ExternalHttpJwtAuthenticationService implements AuthenticationServi
     if (!config.auth.accessJwt) {
       throw new Error('AUTH jwt token is empty');
     }
-    request.defaults({
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      throwResponseError: true
-    });
   }
 
   /**
