@@ -4,9 +4,11 @@ import { Logger } from '../../logger';
 import { MongoDbConnector } from './mongodb.connector.service';
 
 export interface TransactionRepository {
-  save(transaction: Transaction, saveRelated: boolean): Promise<void>;
+  save(transaction: Transaction): Promise<void>;
   getByVerificationId(verificationId: string): Promise<Transaction>;
   getAllByWalletAddresses(walletAddresses: Array<string>): Promise<Array<Transaction>>;
+  getAllByStatusAndCurrency(status: string, currency: string): Promise<Array<Transaction>>;
+  updateStatusByIds(status: string, ids: string[]): Promise<void>;
 }
 
 @injectable()
@@ -20,7 +22,7 @@ export class MongoTransactionRepository implements TransactionRepository {
   /**
    * @param transaction
    */
-  async save(transaction: Transaction, saveRelated: boolean = false): Promise<void> {
+  async save(transaction: Transaction): Promise<void> {
     this.logger.debug('Save', transaction);
     await (await this.mongoConnector.getDb()).collection('transactions').save(transaction);
   }
@@ -39,11 +41,30 @@ export class MongoTransactionRepository implements TransactionRepository {
   async getAllByWalletAddresses(walletAddresses: Array<string>): Promise<Array<Transaction>> {
     this.logger.debug('Query all by', walletAddresses);
     const transactions: Array<Transaction> = await (await this.mongoConnector.getDb()).collection('transactions').find({
-      'employee.wallet': {
+      'walletAddress': {
         '$in': walletAddresses
       }
     }).toArray();
 
     return transactions;
+  }
+
+  async getAllByStatusAndCurrency(status: string, currency: string): Promise<Array<Transaction>> {
+    this.logger.debug('Query all by statuse and currency', status, currency);
+    return (await (await this.mongoConnector.getDb()).collection('transactions').find({
+      status,
+      currency
+    })).toArray();
+  }
+
+  async updateStatusByIds(status: string, ids: string[]): Promise<void> {
+    this.logger.debug('Update statuses by ids', status, ids);
+    const result = await (await this.mongoConnector.getDb()).collection('transactions').updateMany({
+      _id: {
+        $in: ids
+      }
+    }, {
+      $set: { status }
+    });
   }
 }

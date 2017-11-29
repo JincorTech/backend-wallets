@@ -40,9 +40,9 @@ services:
       - ./storage/redis:/data
 
   verify:
-    image: jincort/backend-verify:latest
+    image: jincort/backend-verify:dev-62b3a0d
     environment:
-      REDIS_HOST: redis
+      REDIS_URL: ${REDIS_URL}
       REDIS_PORT: 6379
       FORCE_HTTPS: disabled
       AUTH_API_URL: ${AUTH_API_URL}

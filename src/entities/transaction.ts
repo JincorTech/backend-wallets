@@ -1,9 +1,11 @@
 import { Employee } from './employee';
+import { ObjectID } from 'bson';
 
 export class Transaction {
   id: string;
-  from: string;
-  to: string;
+
+  walletAddress: string;
+  login: string;
   status: string;
   details: string;
   amount: string;

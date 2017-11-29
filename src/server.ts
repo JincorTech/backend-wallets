@@ -15,6 +15,7 @@ import handle from './middlewares/error.handler';
 import config from './config';
 import { Logger, newConsoleTransport } from './logger';
 import { container } from './ioc.container';
+import { PendingTransactionPorcessor } from './services/transactions.service';
 
 winston.configure({
   level: config.logging.level,
@@ -33,11 +34,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   const acceptHeader = req.header('Accept') || '';
 
-  // if (acceptHeader !== 'application/json' && acceptHeader.indexOf('application/vnd.jincor+json;') !== 0) {
-  //   return res.status(NOT_ACCEPTABLE).json({
-  //     error: 'Unsupported "Accept" header'
-  //   });
-  // }
+  if (acceptHeader !== 'application/json' && acceptHeader.indexOf('application/vnd.jincor+json;') !== 0) {
+    return res.status(NOT_ACCEPTABLE).json({
+      error: 'Unsupported "Accept" header'
+    });
+  }
 
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'deny');
@@ -45,11 +46,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   return next();
 });
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
-  // if (req.header('Content-Type') !== 'application/json') {
-  //   return res.status(NOT_ACCEPTABLE).json({
-  //     error: 'Unsupported "Content-Type"'
-  //   });
-  // }
+  if (req.header('Content-Type') !== 'application/json') {
+    return res.status(NOT_ACCEPTABLE).json({
+      error: 'Unsupported "Content-Type"'
+    });
+  }
 
   return next();
 });
@@ -90,6 +91,10 @@ if (!config.server.http && !config.server.https) {
   serverLogger.error('There is no configured HTTP(S) server');
   throw new Error('No servers configured');
 }
+
+const transactionProcessor = container.get<PendingTransactionPorcessor>('PendingTransactionPorcessor');
+transactionProcessor.connectContractsWs();
+transactionProcessor.runEthereumTransactionStatuses();
 
 /**
  * Create HTTP server.

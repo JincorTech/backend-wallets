@@ -1,6 +1,9 @@
 import { Transaction } from './transaction';
+import { ObjectID } from 'bson';
 
 export class Wallet {
+  _id?: ObjectID;
+
   ownerId: string;
   companyId: string;
   type: string;
@@ -10,5 +13,6 @@ export class Wallet {
   balance: string;
   currency: string;
   createdAt: number;
+
   transactions: Array<Transaction>;
 }

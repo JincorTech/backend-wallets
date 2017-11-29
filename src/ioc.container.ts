@@ -1,3 +1,4 @@
+import { CompaniesClient } from './services/companies.client';
 import { Web3Client } from './services/web3.client';
 import { VerificationClient } from './services/verify.client';
 import { WalletRepository, MongoWalletRepository } from './services/repositories/wallet.repository';
@@ -9,12 +10,14 @@ import * as auths from './services/auth.service';
 import * as validation from './middlewares/request.validation';
 import { WalletController } from './controllers/wallet.controller';
 import { TransactionController } from './controllers/transaction.controller';
-import { TransactionRepository, MongoTransactionRepository } from './services/repositories/transaction.repository';
 import { MongoDbConnector } from './services/repositories/mongodb.connector.service';
 import { MailjetService } from './services/mailjet.service';
 import { MailgunService } from './services/mailgun.service';
 import { ContractsClient } from './services/contracts.client';
 import { AuthMiddleware } from './middlewares/common';
+import { DummyMailService } from './services/dummymail.service.';
+import { TransactionRepository, MongoTransactionRepository } from './services/repositories/transaction.repository';
+import { PendingTransactionPorcessor } from './services/transactions.service';
 
 let container = new Container();
 
@@ -26,17 +29,20 @@ container.bind<auths.AuthenticationService>('AuthenticationService')
   );
 }).inSingletonScope();
 
-if (process.env.MAIL_DRIVER === 'mailjet') {
-  container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
-} else {
-  container.bind<EmailServiceInterface>('EmailService').to(MailgunService).inSingletonScope();
-}
+// if (process.env.MAIL_DRIVER === 'mailjet') {
+//   container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
+// } else {
+//   container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
+// }
+container.bind<EmailServiceInterface>('EmailService').to(DummyMailService).inSingletonScope();
 container.bind<VerificationClient>('VerificationClient').to(VerificationClient).inSingletonScope();
 container.bind<Web3Client>('Web3Client').to(Web3Client).inSingletonScope();
 container.bind<ContractsClient>('ContractsClient').to(ContractsClient).inSingletonScope();
 container.bind<MongoDbConnector>('MongoDbConnector').to(MongoDbConnector).inSingletonScope();
 container.bind<WalletRepository>('WalletRepository').to(MongoWalletRepository).inSingletonScope();
 container.bind<TransactionRepository>('TransactionRepository').to(MongoTransactionRepository).inSingletonScope();
+container.bind<CompaniesClient>('CompaniesClient').to(CompaniesClient).inSingletonScope();
+container.bind<PendingTransactionPorcessor>('PendingTransactionPorcessor').to(PendingTransactionPorcessor).inSingletonScope();
 
 container.bind<AuthMiddleware>('AuthMiddleware').to(AuthMiddleware);
 

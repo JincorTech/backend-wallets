@@ -84,6 +84,8 @@ export class ExternalHttpJwtAuthenticationService implements AuthenticationServi
  * Cache decorator for only successfully request
  */
 export class CachedAuthenticationDecorator implements AuthenticationService {
+  private logger: Logger = Logger.getInstance('CAHCED_AUTH_DECORATOR');
+
   private lruCache: any;
 
   /**
@@ -106,6 +108,8 @@ export class CachedAuthenticationDecorator implements AuthenticationService {
       if (this.lruCache.has(jwtToken)) {
         return this.lruCache.get(jwtToken);
       }
+
+      this.logger.verbose('Cache token', jwtToken);
 
       const result = await this.authenticationService.validate(jwtToken);
       this.lruCache.set(jwtToken, result);

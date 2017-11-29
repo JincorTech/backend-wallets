@@ -2,6 +2,7 @@ import * as request from 'web-request';
 import { injectable } from 'inversify';
 
 import config from '../config';
+import { Logger } from '../logger';
 
 export interface RegisterResult {
   username: string;
@@ -16,8 +17,12 @@ export interface TransactionResult {
 /* istanbul ignore next */
 @injectable()
 export class ContractsClient {
+  private logger: Logger = Logger.getInstance('CONTRACTSC_CLIENT');
+
   // @TODO: To finish
   async registerUser(jwtToken: string, login: string): Promise<RegisterResult> {
+    this.logger.verbose('Register user', login);
+
     const result = await request.json<RegisterResult>(`/api/accounts`, {
       baseUrl: config.contracts.baseUrl,
       auth: {
@@ -35,6 +40,8 @@ export class ContractsClient {
 
   // @TODO: To finish
   async transferJcrToken(jwtToken: string, toAddress: string, amount: string): Promise<TransactionResult> {
+    this.logger.verbose('Transfer jcr token', toAddress, amount);
+
     const result = await request.json<TransactionResult>(`/api/networks/${config.contracts.network}/contracts/${config.contracts.jincorToken.address}/actions/invoke`, {
       baseUrl: config.contracts.baseUrl,
       auth: {
@@ -55,6 +62,8 @@ export class ContractsClient {
 
   // @TODO: To finish
   async getBalance(jwtToken: string, address: string): Promise<TransactionResult> {
+    this.logger.verbose('Get balance', address);
+
     const result = await request.json<TransactionResult>(`/api/networks/${config.contracts.network}/contracts/${config.contracts.jincorToken.address}/actions/invoke`, {
       baseUrl: config.contracts.baseUrl,
       auth: {

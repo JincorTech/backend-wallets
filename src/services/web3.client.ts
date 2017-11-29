@@ -1,4 +1,5 @@
 import { injectable } from 'inversify';
+import * as bcrypt from 'bcrypt-nodejs';
 
 const Web3 = require('web3');
 const net = require('net');
@@ -7,6 +8,13 @@ const bip39 = require('bip39');
 const hdkey = require('ethereumjs-wallet/hdkey');
 import config from '../config';
 import 'reflect-metadata';
+import * as lodash from 'lodash';
+
+interface TransactionsGrouppedByStatuses {
+  pending?: Array<string>;
+  success?: Array<string>;
+  failure?: Array<string>;
+}
 
 /* istanbul ignore next */
 @injectable()
@@ -71,6 +79,10 @@ export class Web3Client {
     });
   }
 
+  getSalt(): string {
+    return bcrypt.genSaltSync();
+  }
+
   generateMnemonic(): string {
     return bip39.generateMnemonic();
   }
@@ -113,6 +125,25 @@ export class Web3Client {
           reject(error);
         });
     });
+  }
+
+  async getTransactionGrouppedStatuses(transactionIds: string[]): Promise<TransactionsGrouppedByStatuses> {
+    const parts = lodash.chunk(transactionIds, 1);
+    let data = [];
+
+    for (let i = 0; i < parts.length; i++) {
+      data = data.concat(
+        await Promise.all(parts[i].map(txId => ({
+          txId,
+          data: this.web3.eth.getTransactionReceipt(txId)
+        })))
+      ).filter(t => t.data); // remove pending
+    }
+
+    return {
+      success: data.filter(t => t.data.status === '0x1').map(t => t.txId),
+      failure: data.filter(t => t.data.status !== '0x1').map(t => t.txId)
+    };
   }
 
   onWsClose() {

@@ -13,7 +13,7 @@ export class MongoDbConnector {
   }
 
   /**
-   *
+   * Retrieve DB methods
    */
   async getDb(): Promise<Db> {
     if (!this.db) {

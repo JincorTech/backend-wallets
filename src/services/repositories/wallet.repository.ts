@@ -2,12 +2,13 @@ import { injectable, inject } from 'inversify';
 
 import { Logger } from '../../logger';
 import { MongoDbConnector } from './mongodb.connector.service';
-import { TransactionRepository } from './transaction.repository';
 import { Wallet } from '../../entities/wallet';
 import { Transaction } from '../../entities/transaction';
+import { TransactionRepository } from './transaction.repository';
 
 export interface WalletRepository {
-  save(wallet: Wallet, saveRelated: boolean): Promise<void>;
+  save(wallet: Wallet & {_id?: any}): Promise<number>;
+  getAllCorparateByCompanyId(companyId: string): Promise<Array<Wallet>>;
   getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Array<Wallet>>;
 }
 
@@ -23,14 +24,32 @@ export class MongoWalletRepository implements WalletRepository {
   /**
    * @param wallet
    */
-  async save(wallet: Wallet, saveRelated: boolean = false): Promise<void> {
-    if (saveRelated) {
-      await Promise.all(wallet.transactions.map(t => this.transactionRepository.save(t, false)));
-    }
-    const related = wallet.transactions = [];
+  async save(wallet: Wallet): Promise<number> {
     this.logger.debug('Save', wallet);
-    await (await this.mongoConnector.getDb()).collection('wallets').save(wallet);
-    wallet.transactions = related;
+
+    const storeTrans = wallet.transactions;
+    delete wallet.transactions;
+    const result = (await (await this.mongoConnector.getDb()).collection('wallets').save(wallet));
+    wallet.transactions = storeTrans;
+
+    return result.result.ok;
+  }
+
+  /**
+   * @param userId
+   * @param companyId
+   */
+  async getAllCorparateByCompanyId(companyId: string): Promise<Array<Wallet>> {
+    this.logger.debug('Query all corporate by company', companyId);
+
+    const wallets: Array<Wallet> = await (await this.mongoConnector.getDb()).collection('wallets').find({
+      type: 'corporate',
+      companyId: companyId
+    }).toArray();
+
+    await this.joinTransactions(wallets);
+
+    return wallets;
   }
 
   /**
@@ -45,15 +64,19 @@ export class MongoWalletRepository implements WalletRepository {
       companyId: companyId
     }).toArray();
 
+    await this.joinTransactions(wallets);
+
+    return wallets;
+  }
+
+  private async joinTransactions(wallets: Array<Wallet>) {
     // join with trans
     if (wallets.length) {
       let walletsAddressToIndex = {};
       wallets.forEach((w, i) => walletsAddressToIndex[w.address] = i);
 
       const transactions: Array<Transaction> = await this.transactionRepository.getAllByWalletAddresses(wallets.map(w => w.address));
-      transactions.forEach(t => wallets[walletsAddressToIndex[t.employee.wallet]].transactions.push(t));
+      transactions.forEach(t => wallets[walletsAddressToIndex[t.walletAddress]].transactions.push(t));
     }
-
-    return wallets;
   }
 }

@@ -3,9 +3,11 @@ import * as MailComposer from 'mailcomposer';
 import { injectable } from 'inversify';
 import 'reflect-metadata';
 import config from '../config';
+import { Logger } from '../logger';
 
 @injectable()
 export class MailgunService implements EmailServiceInterface {
+  private logger: Logger = Logger.getInstance('MAILGUN_SERVICE');
   private api: any;
 
   /**
@@ -22,6 +24,8 @@ export class MailgunService implements EmailServiceInterface {
    * @inheritdoc
    */
   public send(sender: string, recipient: string, subject: string, text: string): Promise<any> {
+    this.logger.verbose('Send email', sender, recipient, subject);
+
     /* istanbul ignore next */
     return new Promise((resolve, reject) => {
       let mail = MailComposer({
