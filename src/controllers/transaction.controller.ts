@@ -69,12 +69,18 @@ export class TransactionController implements interfaces.Controller {
       });
 
       let wallet: Wallet;
+      let corporateWallet: Wallet;
+      let personalWallet: Wallet;
+
       if (req.user.scope === 'company-admin') {
-        wallet = (await this.walletRepository.getAllCorparateByCompanyId(companyId))
+        corporateWallet = (await this.walletRepository.getAllCorparateByCompanyId(companyId))
           .filter(w => w.currency === req.body.currency).pop();
-      } else {
-        wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
-          .filter(w => w.currency === req.body.currency).pop();
+      }
+      wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
+        .filter(w => w.currency === req.body.currency).pop();
+
+      if (corporateWallet && corporateWallet.address === req.body.sender) {
+        wallet = corporateWallet;
       }
 
       if (!wallet) {
@@ -87,6 +93,7 @@ export class TransactionController implements interfaces.Controller {
         login: req.user.login,
         status: 'unconfirmed',
         details: '',
+        receiver: req.body.receiver,
         amount: req.body.amount,
         currency: req.body.currency,
         date: ~~(+new Date() / 1000),
@@ -119,26 +126,32 @@ export class TransactionController implements interfaces.Controller {
     try {
       const [companyId, userId] = req.user.login.split(':');
 
-      let wallet: Wallet;
-
-      if (req.user.scope === 'company-admin') {
-        wallet = (await this.walletRepository.getAllCorparateByCompanyId(companyId))
-          .filter(w => w.currency === req.body.currency).pop();
-      } else {
-        wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
-          .filter(w => w.currency === req.body.currency).pop();
-      }
-
-      if (!wallet) {
-        throw new Error('Wallet not found, please register wallet first');
-      }
-
       const verification = req.body.verification;
 
       const transaction = await this.transactionRepository.getByVerificationId(verification.verificationId);
 
-      if (!transaction || transaction.status !== 'unconfirmed' || transaction.login !== req.user.login) {
+      // if (!transaction || transaction.status !== 'unconfirmed' || transaction.login !== req.user.login) {
+      if (!transaction || transaction.login !== req.user.login) {
         throw new Error('Transaction not found');
+      }
+
+      let wallet: Wallet;
+      let corporateWallet: Wallet;
+      let personalWallet: Wallet;
+
+      if (req.user.scope === 'company-admin') {
+        corporateWallet = (await this.walletRepository.getAllCorparateByCompanyId(companyId))
+          .filter(w => w.currency === transaction.currency).pop();
+      }
+      wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
+        .filter(w => w.currency === transaction.currency).pop();
+
+      if (corporateWallet && corporateWallet.address === transaction.walletAddress) {
+        wallet = corporateWallet;
+      }
+
+      if (!wallet) {
+        throw new Error('Wallet not found, please register wallet first');
       }
 
       const verificationResult = await this.verificationClient.validateVerification('email', verification.verificationId, {
@@ -150,28 +163,29 @@ export class TransactionController implements interfaces.Controller {
       try {
         let transactionId = '';
         if (req.body.currency === 'JCR') {
-          const hlfTransaction = await this.contracts.transferJcrToken(req.token, req.body.receiver, req.body.amount);
+          const hlfTransaction = await this.contracts.transferJcrToken(req.token, transaction.receiver, transaction.amount);
           transaction.id = hlfTransaction.transaction;
         } else {
           const ethTransaction = await this.web3.sendTransactionByMnemonic({
-            from: req.body.sender,
-            to: req.body.receiver,
-            amount: req.body.amount,
-            gas: 2000,
-            gasPrice: '1'
+            from: wallet.address,
+            to: transaction.receiver,
+            amount: '' + transaction.amount,
+            gas: 40000,
+            gasPrice: '21'
           }, wallet.mnemonics, wallet.salt);
           transaction.id = ethTransaction;
         }
       } catch (error) {
-        transaction.status = 'error';
+        transaction.status = 'failure';
         transaction.details = error.message;
       }
 
       await this.transactionRepository.save(transaction);
 
       res.json({
-        transactionHash: '0x' + transaction.id,
-        status: transaction.status
+        transactionHash: transaction.id || 'Empty',
+        status: transaction.status,
+        details: transaction.details
       });
     } catch (error) {
       responseAsUnbehaviorError(res, error);

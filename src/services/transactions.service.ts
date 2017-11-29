@@ -4,6 +4,7 @@ import config from '../config';
 import * as WebSocket from 'ws';
 import { inject, injectable } from 'inversify';
 import { TransactionRepository } from './repositories/transaction.repository';
+import successEmailTransaction from '../emails/success';
 
 @injectable()
 export class PendingTransactionPorcessor {
@@ -11,13 +12,14 @@ export class PendingTransactionPorcessor {
 
   constructor(
     @inject('Web3Client') private web3: Web3Client,
-    @inject('TransactionRepository') private transactions: TransactionRepository
+    @inject('TransactionRepository') private transactions: TransactionRepository,
+    @inject('EmailService') private emailService: EmailServiceInterface
   ) {
   }
 
   public connectContractsWs() {
-    this.logger.verbose('Try to connect to contacts ws...');
-    const ws = new WebSocket(`ws://${config.contracts.wsUrl}/events?tenant_token=${config.auth.accessJwt}?`);
+    this.logger.verbose('Try to connect to contacts WS...', config.contracts.wsUrl);
+    const ws = new WebSocket(`${config.contracts.wsUrl}/events?tenant_token=${config.auth.accessJwt}`);
     ws.on('open', () => {
       this.logger.verbose('Connected, wait events');
       ws.on('message', (data) => {
@@ -26,22 +28,39 @@ export class PendingTransactionPorcessor {
           if (event.type === 'transaction') {
             this.transactions.updateStatusByIds(event.payload.status === 'VALID' ? 'success' : 'failure', [event.payload.transaction])
               .then((data) => data, (err) => err);
+            if (event.payload.status === 'success') {
+              this.transactions.getByTransactionHash(event.payload.transaction).then((tx) => {
+                const email = tx.login.split(':').pop();
+                this.emailService.send(config.email.from.general, email, 'Success transaction', successEmailTransaction());
+              });
+            }
           }
         } catch (error) {
           this.logger.error('Error occurred when process incoming message', error);
         }
       });
     });
-    ws.on('close', (code) => {
-      this.logger.verbose('Disconnected');
+    ws.on('error', (err) => {
+      this.logger.error('WS Error occured, ', err);
+      ws.close(1008);
+    });
+    ws.on('close', (code, reason) => {
+      this.logger.verbose('WS Disconnected');
       if (code !== 1000) {
-        this.logger.warn('Not normal disconnection, try to reconnect to WS...');
-        setTimeout(() => this.connectContractsWs(), 1000);
+        this.logger.warn('Not normal disconnection, try to reconnect to WS...', code, reason);
+        if (code !== 1008) {
+          setTimeout(() => this.connectContractsWs(), 1000);
+        }
       }
     });
   }
 
-  public async runEthereumTransactionStatuses() {
+  public async connectEthereumBus() {
+    this.logger.verbose('Run waiting ethereum transactions...');
+    this.runEthereumTransactionStatuses();
+  }
+
+  private async runEthereumTransactionStatuses() {
     try {
       const transactions = await this.transactions.getAllByStatusAndCurrency('pending', 'ETH');
       if (transactions.length) {
@@ -54,6 +73,12 @@ export class PendingTransactionPorcessor {
             this.transactions.updateStatusByIds('success', transStatuses.success),
             this.transactions.updateStatusByIds('failure', transStatuses.failure)
           ]);
+          await Promise.all(
+            transactions.filter(tx => transStatuses.success.indexOf(tx.id) > -1).map(tx => {
+              const email = tx.login.split(':').pop();
+              return this.emailService.send(config.email.from.general, email, 'Success transaction', successEmailTransaction());
+            })
+          );
         }
       }
     } catch (error) {

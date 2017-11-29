@@ -72,11 +72,19 @@ export class MongoWalletRepository implements WalletRepository {
   private async joinTransactions(wallets: Array<Wallet>) {
     // join with trans
     if (wallets.length) {
+      this.logger.verbose('Join with transactions...');
       let walletsAddressToIndex = {};
       wallets.forEach((w, i) => walletsAddressToIndex[w.address] = i);
 
       const transactions: Array<Transaction> = await this.transactionRepository.getAllByWalletAddresses(wallets.map(w => w.address));
-      transactions.forEach(t => wallets[walletsAddressToIndex[t.walletAddress]].transactions.push(t));
+      this.logger.verbose('Transactions count', transactions.length);
+      transactions.forEach(t => {
+        const walletIndex = walletsAddressToIndex[t.walletAddress];
+        if (!wallets[walletIndex].transactions) {
+          wallets[walletIndex].transactions = [];
+        }
+        wallets[walletIndex].transactions.push(t);
+      });
     }
   }
 }

@@ -83,8 +83,8 @@ export default {
     peers: ['peer0.network.jincor.com','peer1.network.jincor.com'],
     network: 'jincormetanet',
     jincorToken: {
-      address: '0001020304050607080900010203040506070809',
-      abi: '[]'
+      address: '7654ccf9656f98cecaaa72bf284513da92daeaa8',
+      abi: '[{"constant":false,"inputs":[{"name":"addr","type":"address"}],"name":"getBalanceInEth","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"uint256"}],"name":"sendCoin","outputs":[{"name":"sufficient","type":"bool"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"addr","type":"address"}],"name":"getBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"}]'
     }
   },
   companies: {
@@ -122,8 +122,7 @@ export default {
       apiSecret: process.env.MAILJET_API_SECRET
     },
     from: {
-      general: 'noreply@jincor.com',
-      referral: 'partners@jincor.com'
+      general: 'noreply@jincor.com'
     }
   },
   mongo: {

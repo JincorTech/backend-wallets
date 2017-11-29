@@ -45,7 +45,6 @@ export class ExternalHttpJwtAuthenticationService implements AuthenticationServi
     if (!jwtToken) {
       return null;
     }
-
     return this.callVerifyJwtTokenMethodEndpoint(jwtToken);
   }
 
@@ -68,9 +67,8 @@ export class ExternalHttpJwtAuthenticationService implements AuthenticationServi
       return response.decoded;
     } catch (e) {
       if (e.statusCode !== 200 || !e.content.decoded) {
-        throw new AuthenticationException('Invalid token');
+        throw new AuthenticationException('Invalid token. ' + e.message);
       }
-
       if (!e.content.decoded.login || !e.content.decoded.jti) {
         throw new AuthenticationException('JWT has invalid format');
       }

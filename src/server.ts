@@ -94,7 +94,7 @@ if (!config.server.http && !config.server.https) {
 
 const transactionProcessor = container.get<PendingTransactionPorcessor>('PendingTransactionPorcessor');
 transactionProcessor.connectContractsWs();
-transactionProcessor.runEthereumTransactionStatuses();
+transactionProcessor.connectEthereumBus();
 
 /**
  * Create HTTP server.

@@ -37,6 +37,9 @@ export class AuthMiddleware extends BaseMiddleware {
       const r = req as AuthenticatedRequest;
       try {
         r.user = await this.authenticationService.validate(r.token);
+        if (!r.user) {
+          throw new AuthenticationException('Invalid token');
+        }
         next();
       } catch (error) {
         if (error instanceof AuthenticationException) {

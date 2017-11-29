@@ -128,21 +128,21 @@ export class Web3Client {
   }
 
   async getTransactionGrouppedStatuses(transactionIds: string[]): Promise<TransactionsGrouppedByStatuses> {
-    const parts = lodash.chunk(transactionIds, 1);
+    const parts = lodash.chunk(transactionIds, 5);
     let data = [];
 
     for (let i = 0; i < parts.length; i++) {
       data = data.concat(
-        await Promise.all(parts[i].map(txId => ({
-          txId,
-          data: this.web3.eth.getTransactionReceipt(txId)
-        })))
-      ).filter(t => t.data); // remove pending
+        await Promise.all(parts[i].map(txId => this.web3.eth.getTransactionReceipt(txId)))
+      ).filter(t => t).map(t => ({
+        status: t.status,
+        txId: t.transactionHash
+      }));
     }
 
     return {
-      success: data.filter(t => t.data.status === '0x1').map(t => t.txId),
-      failure: data.filter(t => t.data.status !== '0x1').map(t => t.txId)
+      success: data.filter(t => t.status === '0x1').map(t => t.txId),
+      failure: data.filter(t => t.status !== '0x1').map(t => t.txId)
     };
   }
 

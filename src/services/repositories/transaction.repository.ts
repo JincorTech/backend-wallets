@@ -5,10 +5,12 @@ import { MongoDbConnector } from './mongodb.connector.service';
 
 export interface TransactionRepository {
   save(transaction: Transaction): Promise<void>;
+  updateStatusByIds(status: string, ids: string[]): Promise<void>;
+
   getByVerificationId(verificationId: string): Promise<Transaction>;
   getAllByWalletAddresses(walletAddresses: Array<string>): Promise<Array<Transaction>>;
   getAllByStatusAndCurrency(status: string, currency: string): Promise<Array<Transaction>>;
-  updateStatusByIds(status: string, ids: string[]): Promise<void>;
+  getByTransactionHash(txHash: string): Promise<Transaction>;
 }
 
 @injectable()
@@ -49,6 +51,15 @@ export class MongoTransactionRepository implements TransactionRepository {
     return transactions;
   }
 
+  async getByTransactionHash(txHash: string): Promise<Transaction> {
+    this.logger.debug('Query by hash', txHash);
+    const transaction = await (await this.mongoConnector.getDb()).collection('transactions').findOne({
+      'id': txHash
+    });
+
+    return transaction;
+  }
+
   async getAllByStatusAndCurrency(status: string, currency: string): Promise<Array<Transaction>> {
     this.logger.debug('Query all by statuse and currency', status, currency);
     return (await (await this.mongoConnector.getDb()).collection('transactions').find({
@@ -60,7 +71,7 @@ export class MongoTransactionRepository implements TransactionRepository {
   async updateStatusByIds(status: string, ids: string[]): Promise<void> {
     this.logger.debug('Update statuses by ids', status, ids);
     const result = await (await this.mongoConnector.getDb()).collection('transactions').updateMany({
-      _id: {
+      id: {
         $in: ids
       }
     }, {

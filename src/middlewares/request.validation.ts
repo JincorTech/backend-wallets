@@ -21,10 +21,10 @@ export function WalletRegisterRequestValidator(req: Request, res: Response, next
 
 export function TransactionInitiateRequestValidator(req: Request, res: Response, next: NextFunction) {
   const schema = Joi.object().keys({
-    sender: Joi.string().hex().required(),
-    receiver: Joi.string().hex().required(),
-    amount: Joi.integer().min(0).required(), // @TODO: Check, it's maybe number overflow
-    currency: Joi.string.valid('ETH', 'JCR').required()
+    sender: Joi.string().regex(/^0x[\da-fA-F]{40,40}$/).required(),
+    receiver: Joi.string().regex(/^0x[\da-fA-F]{40,40}$/).required(),
+    amount: Joi.number().min(0).required(), // @TODO: Check, it's maybe number overflow
+    currency: Joi.string().valid('ETH', 'JCR').required()
     // verificationMethod: Joi.string().valid('email' /*, 'google_auth'*/).required()
   });
 

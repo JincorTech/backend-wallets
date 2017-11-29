@@ -5,6 +5,7 @@ export class Transaction {
   id: string;
 
   walletAddress: string;
+  receiver: string;
   login: string;
   status: string;
   details: string;
