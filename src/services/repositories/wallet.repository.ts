@@ -25,12 +25,9 @@ export class MongoWalletRepository implements WalletRepository {
    * @param wallet
    */
   async save(wallet: Wallet): Promise<number> {
-    this.logger.debug('Save', wallet);
+    this.logger.debug('Save', wallet.address);
 
-    const storeTrans = wallet.transactions;
-    delete wallet.transactions;
-    const result = (await (await this.mongoConnector.getDb()).collection('wallets').save(wallet));
-    wallet.transactions = storeTrans;
+    const result = (await (await this.mongoConnector.getDb()).collection('wallets').save({ ...wallet, transactions: undefined }));
 
     return result.result.ok;
   }
@@ -69,20 +66,39 @@ export class MongoWalletRepository implements WalletRepository {
     return wallets;
   }
 
-  private async joinTransactions(wallets: Array<Wallet>) {
+  private async joinTransactions(wallets: Array<Wallet>): Promise<void> {
     // join with trans
     if (wallets.length) {
       this.logger.verbose('Join with transactions...');
       let walletsAddressToIndex = {};
-      wallets.forEach((w, i) => walletsAddressToIndex[w.address] = i);
+      wallets.forEach((w, i) => walletsAddressToIndex[w.currency + w.address] = i);
 
       const transactions: Array<Transaction> = await this.transactionRepository.getAllByWalletAddresses(wallets.map(w => w.address));
+
       this.logger.verbose('Transactions count', transactions.length);
       transactions.forEach(t => {
-        const walletIndex = walletsAddressToIndex[t.walletAddress];
+        let walletIndex = walletsAddressToIndex[t.currency + t.sender];
+        let isSending = true;
+        if (typeof walletIndex === 'undefined') {
+          walletIndex = walletsAddressToIndex[t.currency + t.receiver];
+          isSending = false;
+        }
+
+        if (typeof walletIndex === 'undefined') {
+          return;
+        }
+
         if (!wallets[walletIndex].transactions) {
           wallets[walletIndex].transactions = [];
         }
+
+        t.amount = (isSending ? '-' : '') + t.amount;
+
+        // hiding failed transactions for receiver
+        if (!isSending && t.status !== 'success') {
+          return;
+        }
+
         wallets[walletIndex].transactions.push(t);
       });
     }

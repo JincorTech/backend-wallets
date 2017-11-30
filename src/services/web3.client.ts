@@ -10,8 +10,7 @@ import config from '../config';
 import 'reflect-metadata';
 import * as lodash from 'lodash';
 
-interface TransactionsGrouppedByStatuses {
-  pending?: Array<string>;
+export interface TransactionsGrouppedByStatuses {
   success?: Array<string>;
   failure?: Array<string>;
 }

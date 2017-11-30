@@ -4,7 +4,7 @@ import { ObjectID } from 'bson';
 export class Transaction {
   id: string;
 
-  walletAddress: string;
+  sender: string;
   receiver: string;
   login: string;
   status: string;

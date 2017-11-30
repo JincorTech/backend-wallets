@@ -25,7 +25,7 @@ export class MongoTransactionRepository implements TransactionRepository {
    * @param transaction
    */
   async save(transaction: Transaction): Promise<void> {
-    this.logger.debug('Save', transaction);
+    this.logger.debug('Save', transaction.sender);
     await (await this.mongoConnector.getDb()).collection('transactions').save(transaction);
   }
 
@@ -43,9 +43,18 @@ export class MongoTransactionRepository implements TransactionRepository {
   async getAllByWalletAddresses(walletAddresses: Array<string>): Promise<Array<Transaction>> {
     this.logger.debug('Query all by', walletAddresses);
     const transactions: Array<Transaction> = await (await this.mongoConnector.getDb()).collection('transactions').find({
-      'walletAddress': {
-        '$in': walletAddresses
-      }
+      '$or': [
+        {
+          'sender': {
+            '$in': walletAddresses
+          }
+        },
+        {
+          'receiver': {
+            '$in': walletAddresses
+          }
+        }
+      ]
     }).toArray();
 
     return transactions;

@@ -11,6 +11,7 @@ import { Wallet } from '../entities/wallet';
 import { WalletRepository } from '../services/repositories/wallet.repository';
 import { AuthenticatedRequest } from '../interfaces';
 import { CompaniesClient } from '../services/companies.client';
+import { requestDataThroughCache } from '../helpers/helpers';
 
 /**
  * Wallet resource
@@ -20,6 +21,7 @@ import { CompaniesClient } from '../services/companies.client';
   'AuthMiddleware'
 )
 export class WalletController implements interfaces.Controller {
+
   constructor(
     @inject('Web3Client') private web3: Web3Client,
     @inject('CompaniesClient') private companies: CompaniesClient,
@@ -36,9 +38,16 @@ export class WalletController implements interfaces.Controller {
       currrency: w.currency,
       created_at: ~~(w.createdAt / 1000),
       transactions: (w.transactions || []).filter(t => t.status !== 'unconfirmed').map(t => {
+        const employee = employeeMap[t.login] || { profile: {} };
         return {
           id: t.id,
-          employee: employeeMap[t.login],
+          employee: {
+            id: employee.id,
+            'wallet': t.sender,
+            'firstName': employee.profile.firstName,
+            'lastName': employee.profile.lastName,
+            'avatar': employee.profile.avatar
+          },
           status: t.status,
           details: t.details,
           amount: t.amount,
@@ -51,7 +60,7 @@ export class WalletController implements interfaces.Controller {
 
   private async getEmployeeMap(jwtToken: string, wallets: Array<Wallet>) {
     const logins = lodash.uniq(lodash.flatten(wallets.map(w => w.transactions)).filter(w => w).map(t => t.login));
-    return lodash.keyBy(await this.companies.queryEmployeesByLogins(jwtToken, logins), 'id');
+    return this.companies.queryEmployeesByLogins(jwtToken, logins);
   }
 
   @httpGet(
@@ -59,11 +68,13 @@ export class WalletController implements interfaces.Controller {
   )
   async listAllWallets(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const [companyId, userId] = req.user.login.split(':');
+      const splitted = req.user.login.split(':');
+      const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
+
       let wallets = await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId);
       const employeeMap = await this.getEmployeeMap(req.token, wallets);
 
-      const isCorporate = req.params.type === 'corporate';
+      const isCorporate = req.user.scope === 'company-admin';
       if (isCorporate) {
         wallets = wallets.concat(await this.walletRepository.getAllCorparateByCompanyId(companyId));
       }
@@ -73,19 +84,24 @@ export class WalletController implements interfaces.Controller {
 
       // get balances
       const [ethBalances, jcrBalances] = await Promise.all([
-        Promise.all(ethWallets.map(w => this.web3.getEthBalance(w.address))),
-        Promise.all(jcrWallets.map(w => this.contracts.getBalance(req.token, w.address)))
+        Promise.all(ethWallets.map(w => requestDataThroughCache('balances', 4000, 'ETH' + w.address, () => this.web3.getEthBalance(w.address)))),
+        Promise.all(jcrWallets.map(w => requestDataThroughCache('balances', 4000, 'JCR' + w.address, () => this.contracts.getBalance(req.token, w.type === 'corporate', w.address))))
       ]);
 
       ethWallets.forEach((w, i) => {
         w.balance = ethBalances[i];
+        this.walletRepository.save(w).then((data) => data, (error) => error); // its too dirty
       });
+
       jcrWallets.forEach((w, i) => {
         w.balance = jcrBalances[i];
+        this.walletRepository.save(w).then((data) => data, (error) => error); // its too dirty
       });
+
 
       res.json(wallets.map(w => this.transWallet(w, employeeMap)));
     } catch (error) {
+      console.log('Error occurred', error);
       responseAsUnbehaviorError(res, error);
     }
   }
@@ -96,7 +112,8 @@ export class WalletController implements interfaces.Controller {
   )
   async registerEmployeeWallets(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const [companyId, userId] = req.user.login.split(':');
+      const splitted = req.user.login.split(':');
+      const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
 
       if (!companyId || !userId) {
         throw new Error('Invalid user login, format must be companyId:userEmail');
@@ -131,12 +148,11 @@ export class WalletController implements interfaces.Controller {
 
         const ethAccount = this.web3.getAccountByMnemonicAndSalt(mnemonic, salt);
         const hlfAccount = await this.contracts.registerUser(req.token,
-          isCorporate ? companyId : req.user.login,
-          mnemonic);
+          req.user.login, mnemonic, isCorporate);
 
         walletEth = new Wallet();
         walletEth.transactions = [];
-        walletEth.address = ethAccount.address;
+        walletEth.address = ethAccount.address.toLowerCase();
         walletEth.balance = '0';
         walletEth.ownerId = isCorporate ? '' : userId;
         walletEth.companyId = companyId;
@@ -150,7 +166,7 @@ export class WalletController implements interfaces.Controller {
 
         walletJcr = new Wallet();
         Object.assign(walletJcr, lodash.omit(walletEth, ['_id']));
-        walletJcr.address = '0x' + hlfAccount.address;
+        walletJcr.address = '0x' + hlfAccount.address.toLowerCase();
         walletJcr.currency = 'JCR';
 
         await this.walletRepository.save(walletJcr);
@@ -161,6 +177,7 @@ export class WalletController implements interfaces.Controller {
 
       res.json([walletEth, walletJcr].map(w => this.transWallet(w, {})));
     } catch (error) {
+      console.log('Error occurred', error);
       responseAsUnbehaviorError(res, error);
     }
   }

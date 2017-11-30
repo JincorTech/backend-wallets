@@ -40,7 +40,11 @@ export class TransactionController implements interfaces.Controller {
   )
   async initiateTransaction(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const [companyId, userId] = req.user.login.split(':');
+      const splitted = req.user.login.split(':');
+      const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
+
+      req.body.sender = req.body.sender.toLowerCase();
+      req.body.receiver = req.body.receiver.toLowerCase();
 
       const verifyResponse = await this.verificationClient.initiateVerification(EMAIL_VERIFICATION, {
         /* google_auth
@@ -89,7 +93,7 @@ export class TransactionController implements interfaces.Controller {
 
       this.transactionRepository.save({
         id: '',
-        walletAddress: wallet.address,
+        sender: wallet.address,
         login: req.user.login,
         status: 'unconfirmed',
         details: '',
@@ -124,14 +128,14 @@ export class TransactionController implements interfaces.Controller {
   )
   async verifyTransaction(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const [companyId, userId] = req.user.login.split(':');
+      const splitted = req.user.login.split(':');
+      const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
 
       const verification = req.body.verification;
 
       const transaction = await this.transactionRepository.getByVerificationId(verification.verificationId);
 
-      // if (!transaction || transaction.status !== 'unconfirmed' || transaction.login !== req.user.login) {
-      if (!transaction || transaction.login !== req.user.login) {
+      if (!transaction || transaction.status !== 'unconfirmed' || transaction.login !== req.user.login) {
         throw new Error('Transaction not found');
       }
 
@@ -146,7 +150,9 @@ export class TransactionController implements interfaces.Controller {
       wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
         .filter(w => w.currency === transaction.currency).pop();
 
-      if (corporateWallet && corporateWallet.address === transaction.walletAddress) {
+      let isCorporate = false;
+      if (corporateWallet && corporateWallet.address === transaction.sender) {
+        isCorporate = true;
         wallet = corporateWallet;
       }
 
@@ -162,9 +168,9 @@ export class TransactionController implements interfaces.Controller {
 
       try {
         let transactionId = '';
-        if (req.body.currency === 'JCR') {
-          const hlfTransaction = await this.contracts.transferJcrToken(req.token, transaction.receiver, transaction.amount);
-          transaction.id = hlfTransaction.transaction;
+        if (transaction.currency === 'JCR') {
+          const hlfTransaction = await this.contracts.transferJcrToken(req.token, isCorporate, transaction.receiver, transaction.amount,);
+          transaction.id = '0x' + hlfTransaction.result.transaction;
         } else {
           const ethTransaction = await this.web3.sendTransactionByMnemonic({
             from: wallet.address,
@@ -183,7 +189,7 @@ export class TransactionController implements interfaces.Controller {
       await this.transactionRepository.save(transaction);
 
       res.json({
-        transactionHash: transaction.id || 'Empty',
+        transactionHash: transaction.id || '',
         status: transaction.status,
         details: transaction.details
       });

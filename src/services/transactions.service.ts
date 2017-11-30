@@ -26,12 +26,13 @@ export class PendingTransactionPorcessor {
         try {
           const event: any = JSON.parse(data.toString());
           if (event.type === 'transaction') {
-            this.transactions.updateStatusByIds(event.payload.status === 'VALID' ? 'success' : 'failure', [event.payload.transaction])
+            const transHash = '0x' + event.payload.txId;
+            this.transactions.updateStatusByIds(event.payload.status === 'VALID' ? 'success' : 'failure', [transHash])
               .then((data) => data, (err) => err);
-            if (event.payload.status === 'success') {
-              this.transactions.getByTransactionHash(event.payload.transaction).then((tx) => {
+            if (event.payload.status === 'VALID') {
+              this.transactions.getByTransactionHash(transHash).then((tx) => {
                 const email = tx.login.split(':').pop();
-                this.emailService.send(config.email.from.general, email, 'Success transaction', successEmailTransaction());
+                this.emailService.send(config.email.from.general, email, 'Success transaction', successEmailTransaction(tx.currency, tx.amount, tx.id));
               });
             }
           }
@@ -76,7 +77,7 @@ export class PendingTransactionPorcessor {
           await Promise.all(
             transactions.filter(tx => transStatuses.success.indexOf(tx.id) > -1).map(tx => {
               const email = tx.login.split(':').pop();
-              return this.emailService.send(config.email.from.general, email, 'Success transaction', successEmailTransaction());
+              return this.emailService.send(config.email.from.general, email, 'Success transaction', successEmailTransaction(tx.currency, tx.amount, tx.id));
             })
           );
         }

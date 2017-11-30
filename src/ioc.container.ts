@@ -29,12 +29,16 @@ container.bind<auths.AuthenticationService>('AuthenticationService')
   );
 }).inSingletonScope();
 
-// if (process.env.MAIL_DRIVER === 'mailjet') {
-//   container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
-// } else {
-//   container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
-// }
-container.bind<EmailServiceInterface>('EmailService').to(DummyMailService).inSingletonScope();
+switch (process.env.MAIL_DRIVER) {
+  case 'mailjet':
+    container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
+    break;
+  case 'mailgun':
+    container.bind<EmailServiceInterface>('EmailService').to(MailjetService).inSingletonScope();
+    break;
+  default:
+    container.bind<EmailServiceInterface>('EmailService').to(DummyMailService).inSingletonScope();
+}
 container.bind<VerificationClient>('VerificationClient').to(VerificationClient).inSingletonScope();
 container.bind<Web3Client>('Web3Client').to(Web3Client).inSingletonScope();
 container.bind<ContractsClient>('ContractsClient').to(ContractsClient).inSingletonScope();

@@ -34,7 +34,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   const acceptHeader = req.header('Accept') || '';
 
-  if (acceptHeader !== 'application/json' && acceptHeader.indexOf('application/vnd.jincor+json;') !== 0) {
+  if (req.method !== 'OPTIONS' && acceptHeader !== 'application/json' && acceptHeader.indexOf('application/vnd.jincor+json;') !== 0) {
     return res.status(NOT_ACCEPTABLE).json({
       error: 'Unsupported "Accept" header'
     });
@@ -43,11 +43,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'deny');
   res.setHeader('Content-Security-Policy', 'default-src \'none\'');
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Authorization, Origin, X-Requested-With, Content-Type, Accept');
   return next();
 });
+
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
-  if (req.header('Content-Type') !== 'application/json') {
-    return res.status(NOT_ACCEPTABLE).json({
+  if (req.method !== 'OPTIONS' && (
+    !req.header('Content-Type') ||
+    (req.header('Content-Type') !== 'application/json' && !req.header('Content-Type').includes('application/x-www-form-urlencoded'))
+  )) {
+    return res.status(406).json({
       error: 'Unsupported "Content-Type"'
     });
   }

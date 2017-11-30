@@ -5,3 +5,7 @@ npm-debug.log
 coverage
 .nyc_output
 .env
+auth
+call
+configs
+verificationId
