@@ -73,12 +73,13 @@ export class WalletController implements interfaces.Controller {
       const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
 
       let wallets = await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId);
-      const employeeMap = await this.getEmployeeMap(req.token, wallets);
 
       const isCorporate = req.user.scope === 'company-admin';
       if (isCorporate) {
         wallets = wallets.concat(await this.walletRepository.getAllCorparateByCompanyId(companyId));
       }
+
+      const employeeMap = await this.getEmployeeMap(req.token, wallets);
 
       let ethWallets = wallets.filter(w => w.currency === 'ETH');
       let jcrWallets = wallets.filter(w => w.currency === 'JCR');
