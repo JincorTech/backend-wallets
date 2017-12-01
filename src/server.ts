@@ -98,9 +98,11 @@ if (!config.server.http && !config.server.https) {
   throw new Error('No servers configured');
 }
 
-const transactionProcessor = container.get<PendingTransactionPorcessor>('PendingTransactionPorcessor');
-transactionProcessor.connectContractsWs();
-transactionProcessor.connectEthereumBus();
+if (!process.env.NO_WAIT_TRANSACTION) {
+  const transactionProcessor = container.get<PendingTransactionPorcessor>('PendingTransactionPorcessor');
+  transactionProcessor.connectContractsWs();
+  transactionProcessor.connectEthereumBus();
+}
 
 /**
  * Create HTTP server.

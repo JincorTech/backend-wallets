@@ -40,6 +40,8 @@ const {
   ORM_SUBSCRIBER_DIR,
   ORM_MIGRATIONS_DIR,
 
+  REDIS_URL,
+
   API_URL,
   FRONTEND_URL,
 
@@ -74,6 +76,9 @@ export default {
 
     apiUrl: API_URL,
     frontendUrl: FRONTEND_URL
+  },
+  redis: {
+    url: REDIS_URL
   },
   web3: {
     startBlock: WEB3_RESTORE_START_BLOCK || 1

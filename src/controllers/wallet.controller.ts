@@ -1,3 +1,4 @@
+import { WorkQueue } from '../services/work.queue';
 import { Web3Client } from '../services/web3.client';
 import { ContractsClient } from '../services/contracts.client';
 import * as lodash from 'lodash';
@@ -22,6 +23,8 @@ import { requestDataThroughCache } from '../helpers/helpers';
   'JwtThrottlingMiddleware'
 )
 export class WalletController implements interfaces.Controller {
+  private sendEthTestCoins = new WorkQueue('WALLET_SEND_TEST_COINS_ETH');
+  private sendJcrTestCoins = new WorkQueue('WALLET_SEND_TEST_COINS_JCR');
 
   constructor(
     @inject('Web3Client') private web3: Web3Client,
@@ -99,7 +102,6 @@ export class WalletController implements interfaces.Controller {
         w.balance = jcrBalances[i];
         this.walletRepository.save(w).then((data) => data, (error) => error); // its too dirty
       });
-
 
       res.json(wallets.map(w => this.transWallet(w, employeeMap)));
     } catch (error) {
@@ -187,6 +189,8 @@ export class WalletController implements interfaces.Controller {
           this.walletRepository.save(walletJcr)
         ]);
 
+        this.sendEthTestCoins.publish({ id: walletEth._id.toHexString(), data: walletEth });
+        this.sendJcrTestCoins.publish({ id: walletJcr._id.toHexString(), data: walletJcr });
       } else {
         walletEth = wallets.filter(w => w.currency === 'ETH').pop();
         walletJcr = wallets.filter(w => w.currency === 'JCR').pop();

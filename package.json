@@ -17,6 +17,7 @@
     ]
   },
   "devDependencies": {
+    "@types/bull": "3.3.0",
     "@types/express": "^4.0.39",
     "@types/http-status": "0.2.30",
     "@types/jsonwebtoken": "^7.2.3",
@@ -36,7 +37,7 @@
     "bcrypt-nodejs": "0.0.3",
     "bip39": "^2.4.0",
     "body-parser": "^1.18.2",
-    "cors": "^2.8.4",
+    "bull": "3.3.6",
     "dotenv": "^4.0.0",
     "ethereumjs-wallet": "^0.6.0",
     "express": "^4.16.2",
@@ -49,7 +50,7 @@
     "joi": "^13.0.2",
     "jsonwebtoken": "^8.1.0",
     "lodash": "4.17.4",
-    "lru-cache": "^4.1.1",
+    "lru-cache": "4.1.1",
     "mailcomposer": "4.0.2",
     "mailgun-js": "0.13.1",
     "mongodb": "^2.2.33",
@@ -57,7 +58,6 @@
     "node-uuid": "^1.4.8",
     "qr-image": "3.2.0",
     "reflect-metadata": "^0.1.10",
-    "rolling-rate-limiter": "^0.1.10",
     "web-request": "^1.0.7",
     "web3": "^1.0.0-beta.26",
     "winston": "^2.4.0",
