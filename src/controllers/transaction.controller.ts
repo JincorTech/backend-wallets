@@ -40,6 +40,12 @@ export class TransactionController implements interfaces.Controller {
   )
   async initiateTransaction(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
+      let ip = req.header('cf-connecting-ip') || req.ip;
+
+      if (ip.substr(0, 7) === '::ffff:') {
+        ip = ip.substr(7);
+      }
+
       const splitted = req.user.login.split(':');
       const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
 
@@ -61,7 +67,7 @@ export class TransactionController implements interfaces.Controller {
         template: {
           fromEmail: 'support@jincor.com',
           subject: 'Here’s the Code to Verify your Beta.Jincor.com transaction',
-          body: initVerificationEmail('body')
+          body: initVerificationEmail(ip)
         },
         generateCode: {
           length: 6,
