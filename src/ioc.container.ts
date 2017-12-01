@@ -14,7 +14,7 @@ import { MongoDbConnector } from './services/repositories/mongodb.connector.serv
 import { MailjetService } from './services/mailjet.service';
 import { MailgunService } from './services/mailgun.service';
 import { ContractsClient } from './services/contracts.client';
-import { AuthMiddleware } from './middlewares/common';
+import { AuthMiddleware, JwtThrottlingMiddleware } from './middlewares/common';
 import { DummyMailService } from './services/dummymail.service.';
 import { TransactionRepository, MongoTransactionRepository } from './services/repositories/transaction.repository';
 import { PendingTransactionPorcessor } from './services/transactions.service';
@@ -49,6 +49,7 @@ container.bind<CompaniesClient>('CompaniesClient').to(CompaniesClient).inSinglet
 container.bind<PendingTransactionPorcessor>('PendingTransactionPorcessor').to(PendingTransactionPorcessor).inSingletonScope();
 
 container.bind<AuthMiddleware>('AuthMiddleware').to(AuthMiddleware);
+container.bind<JwtThrottlingMiddleware>('JwtThrottlingMiddleware').to(JwtThrottlingMiddleware);
 
 container.bind<express.RequestHandler>('TransactionInitiateRequestValidator').toConstantValue(
   (req: any, res: any, next: any) => validation.TransactionInitiateRequestValidator(req, res, next)

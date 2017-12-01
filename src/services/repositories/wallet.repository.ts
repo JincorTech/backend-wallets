@@ -7,7 +7,7 @@ import { Transaction } from '../../entities/transaction';
 import { TransactionRepository } from './transaction.repository';
 
 export interface WalletRepository {
-  save(wallet: Wallet & {_id?: any}): Promise<number>;
+  save(wallet: Wallet & {_id?: any}): Promise<any>;
   getAllCorparateByCompanyId(companyId: string): Promise<Array<Wallet>>;
   getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Array<Wallet>>;
 }
@@ -24,12 +24,14 @@ export class MongoWalletRepository implements WalletRepository {
   /**
    * @param wallet
    */
-  async save(wallet: Wallet): Promise<number> {
+  async save(wallet: Wallet): Promise<any> {
     this.logger.debug('Save', wallet.address);
 
     const result = (await (await this.mongoConnector.getDb()).collection('wallets').save({ ...wallet, transactions: undefined }));
-
-    return result.result.ok;
+    if (result.ops) {
+      return result.ops[0]._id;
+    }
+    return wallet._id;
   }
 
   /**

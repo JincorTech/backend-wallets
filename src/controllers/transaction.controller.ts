@@ -21,7 +21,8 @@ import { TransactionRepository } from '../services/repositories/transaction.repo
  */
 @controller(
   '/tx',
-  'AuthMiddleware'
+  'AuthMiddleware',
+  'JwtThrottlingMiddleware'
 )
 export class TransactionController implements interfaces.Controller {
   constructor(

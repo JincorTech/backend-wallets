@@ -18,7 +18,8 @@ import { requestDataThroughCache } from '../helpers/helpers';
  */
 @controller(
   '/wallets',
-  'AuthMiddleware'
+  'AuthMiddleware',
+  'JwtThrottlingMiddleware'
 )
 export class WalletController implements interfaces.Controller {
 
@@ -84,8 +85,8 @@ export class WalletController implements interfaces.Controller {
 
       // get balances
       const [ethBalances, jcrBalances] = await Promise.all([
-        Promise.all(ethWallets.map(w => requestDataThroughCache('balances', 4000, 'ETH' + w.address, () => this.web3.getEthBalance(w.address)))),
-        Promise.all(jcrWallets.map(w => requestDataThroughCache('balances', 4000, 'JCR' + w.address, () => this.contracts.getBalance(req.token, w.type === 'corporate', w.address))))
+        Promise.all(ethWallets.map(w => requestDataThroughCache('balances', 4000, 4096, 'ETH' + w.address, () => this.web3.getEthBalance(w.address)))),
+        Promise.all(jcrWallets.map(w => requestDataThroughCache('balances', 4000, 4096, 'JCR' + w.address, () => this.contracts.getBalance(req.token, w.type === 'corporate', w.address))))
       ]);
 
       ethWallets.forEach((w, i) => {
@@ -143,33 +144,48 @@ export class WalletController implements interfaces.Controller {
 
       // create new
       if (!wallets.length) {
-        const mnemonic = this.web3.generateMnemonic();
-        const salt = this.web3.getSalt();
-
-        const ethAccount = this.web3.getAccountByMnemonicAndSalt(mnemonic, salt);
-        const hlfAccount = await this.contracts.registerUser(req.token,
-          req.user.login, mnemonic, isCorporate);
-
         walletEth = new Wallet();
         walletEth.transactions = [];
-        walletEth.address = ethAccount.address.toLowerCase();
         walletEth.balance = '0';
         walletEth.ownerId = isCorporate ? '' : userId;
         walletEth.companyId = companyId;
         walletEth.type = isCorporate ? 'corporate' : 'personal';
         walletEth.currency = 'ETH';
-        walletEth.mnemonics = mnemonic;
-        walletEth.salt = salt;
         walletEth.createdAt = +new Date();
-
-        await this.walletRepository.save(walletEth);
 
         walletJcr = new Wallet();
         Object.assign(walletJcr, lodash.omit(walletEth, ['_id']));
-        walletJcr.address = '0x' + hlfAccount.address.toLowerCase();
         walletJcr.currency = 'JCR';
 
-        await this.walletRepository.save(walletJcr);
+        const [walletEthId, walletJcrId] = await Promise.all([
+          this.walletRepository.save(walletEth),
+          this.walletRepository.save(walletJcr)
+        ]);
+
+        const mnemonic = this.web3.generateMnemonic();
+        const salt = this.web3.getSalt();
+
+        const ethAccount = this.web3.getAccountByMnemonicAndSalt(mnemonic, salt);
+
+        walletEth.address = ethAccount.address.toLowerCase();
+        walletEth.mnemonics = mnemonic;
+        walletEth.salt = salt;
+
+        const hlfAccount = await this.contracts.registerUser(req.token,
+          req.user.login, mnemonic, isCorporate);
+
+        walletJcr.mnemonics = mnemonic;
+        walletJcr.salt = salt;
+        walletJcr.address = '0x' + hlfAccount.address.toLowerCase();
+
+        walletEth._id = walletEthId;
+        walletJcr._id = walletJcrId;
+
+        await Promise.all([
+          this.walletRepository.save(walletEth),
+          this.walletRepository.save(walletJcr)
+        ]);
+
       } else {
         walletEth = wallets.filter(w => w.currency === 'ETH').pop();
         walletJcr = wallets.filter(w => w.currency === 'JCR').pop();

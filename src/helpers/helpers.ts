@@ -22,10 +22,10 @@ export function base64decode(str) {
 
 let globalCache: any = {};
 
-export async function requestDataThroughCache(namespace: string, timeout: number, key: string, method: () => any): Promise<any> {
+export async function requestDataThroughCache(namespace: string, timeout: number, count: number, key: string, method: () => any): Promise<any> {
   if (!globalCache[namespace]) {
     globalCache[namespace] = LRU({
-      max: 4096,
+      max: count,
       maxAge: timeout
     });
   }
