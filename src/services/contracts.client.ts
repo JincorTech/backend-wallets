@@ -35,7 +35,7 @@ export class ContractsClient {
       method: 'post',
       body: {
         loginFromJwt: 'true',
-        password: password,
+        password,
         isCorporate
       }
     });

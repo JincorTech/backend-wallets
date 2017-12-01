@@ -81,6 +81,7 @@ export default {
   contracts: {
     wsUrl: process.env.CONTRACTS_WS_URL,
     baseUrl: process.env.CONTRACTS_BASE_URL,
+    maintainUser: process.env.CONTRACTS_MAINTAIN_USER,
     peers: ['peer0.network.jincor.com','peer1.network.jincor.com'],
     network: 'jincormetanet',
     jincorToken: {

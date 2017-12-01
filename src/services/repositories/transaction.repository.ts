@@ -72,6 +72,10 @@ export class MongoTransactionRepository implements TransactionRepository {
   async getAllByStatusAndCurrency(status: string, currency: string): Promise<Array<Transaction>> {
     this.logger.debug('Query all by statuse and currency', status, currency);
     return (await (await this.mongoConnector.getDb()).collection('transactions').find({
+      id : {
+        '$exists' : true,
+        '$nin': [null, '']
+      },
       status,
       currency
     })).toArray();
