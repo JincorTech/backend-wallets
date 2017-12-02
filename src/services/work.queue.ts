@@ -19,7 +19,6 @@ export class WorkQueue {
       return concreatQueue.close();
     }, (err) => {
       this.logger.error('Error was occurred when publish', this.queueName, data.id, err);
-    }).finally(() => {
       return concreatQueue.close();
     });
   }
