@@ -23,7 +23,6 @@ export interface TransactionResult {
 export class ContractsClient {
   private logger: Logger = Logger.getInstance('CONTRACTS_CLIENT');
 
-  // @TODO: To finish
   async registerUser(jwtToken: string, login: string, password: string, isCorporate: boolean): Promise<RegisterResult> {
     this.logger.verbose('Register user', login);
 
@@ -35,7 +34,7 @@ export class ContractsClient {
       method: 'post',
       body: {
         loginFromJwt: 'true',
-        password: login,
+        password,
         isCorporate
       }
     });
@@ -43,7 +42,6 @@ export class ContractsClient {
     return result;
   }
 
-  // @TODO: To finish
   async getTransactionStatus(jwtToken: string, transactionHash: string): Promise<string> {
     this.logger.verbose('getTransactionStatus', transactionHash);
 
@@ -91,7 +89,6 @@ export class ContractsClient {
     };
   }
 
-  // @TODO: To finish
   async transferJcrToken(jwtToken: string, isCorporate: boolean, toAddress: string, amount: string): Promise<TransactionResult> {
     this.logger.verbose('Transfer jcr token', toAddress, amount);
 
@@ -119,7 +116,6 @@ export class ContractsClient {
     }
   }
 
-  // @TODO: To finish
   async getBalance(jwtToken: string, isCorporate: boolean, address: string): Promise<string> {
     this.logger.verbose('Get balance', address);
 

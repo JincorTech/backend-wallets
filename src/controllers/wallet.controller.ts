@@ -175,7 +175,7 @@ export class WalletController implements interfaces.Controller {
         walletEth.salt = salt;
 
         const hlfAccount = await this.contracts.registerUser(req.token,
-          req.user.login, mnemonic, isCorporate);
+          req.user.login, walletEth.ownerId + ':' + walletEth.companyId, isCorporate);
 
         walletJcr.mnemonics = mnemonic;
         walletJcr.salt = salt;
