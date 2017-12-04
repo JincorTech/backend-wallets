@@ -1,0 +1,62 @@
+version: '2'
+services:
+  wallets:
+    image: jincort/backend-wallets:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+      - 80:3000
+      - 4000:4000
+    depends_on:
+      - mongo
+    restart: always
+
+  mongo:
+    image: jincort/backend-mongodb:latest
+
+  auth:
+    image: jincort/backend-auth:production
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      THROTTLER_WHITE_LIST: 127.0.0.1,10.5.0.2,10.5.0.3
+      TENANT_WHITE_LIST: 127.0.0.1,10.5.0.2,10.5.0.3
+      FORCE_HTTPS: disabled
+      JWT_KEY: JwtSecret
+    ports:
+      - 9300: 3000
+    volumes:
+      - /usr/src/app
+    links:
+      - redis
+    depends_on:
+      - redis
+
+  redis:
+    image: jincort/backend-redis:production
+    volumes:
+      - ./storage/redis:/data
+
+  verify:
+    image: jincort/backend-verify:dev-62b3a0d
+    environment:
+      REDIS_URL: ${REDIS_URL}
+      REDIS_PORT: 6379
+      FORCE_HTTPS: disabled
+      AUTH_API_URL: ${AUTH_API_URL}
+      MAIL_DRIVER: ${MAIL_DRIVER}
+      MAILGUN_SECRET: ${MAILGUN_SECRET}
+      MAILGUN_DOMAIN: ${MAILGUN_DOMAIN}
+    ports:
+      - "3000"
+      - "4000"
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+    links:
+      - redis
+    depends_on:
+      - redis
+
