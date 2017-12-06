@@ -53,6 +53,7 @@
     "lru-cache": "4.1.1",
     "mailcomposer": "4.0.2",
     "mailgun-js": "0.13.1",
+    "moment": "2.19.3",
     "mongodb": "^2.2.33",
     "node-mailjet": "3.2.1",
     "node-uuid": "^1.4.8",

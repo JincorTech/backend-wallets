@@ -1,0 +1,253 @@
+FORMAT: 1A
+HOST: http://contracts:3000/
+
+# Jincor Backend Employee Contracts
+
+## Employee contracts [/api/contracts]
+
+### List [GET]
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/vnd.jincor+json; version=1
+
++ Response 200 (application/json)
+
+            "status": 200,
+            "data": [
+                {
+                    "contractId": "1b4a3cc41d1b0000884c8158931338e74ca849ce",
+                    "employee": {
+                        "fullName": "Maxim Brook"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                },
+                {
+                    "contractId": "a6a0c6e7ee5f1536d66dab3db3462596864a8db1",
+                    "employee": {
+                        "fullName": "Mike Jefferson"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": null
+                },
+                {
+                    "contractId": "3f269df82c56a28b1f10505d9c19b2ff6324c27b",
+                    "employee": {
+                        "fullName": "Claudia Bullock"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                },
+                {
+                    "contractId": "a0738f01bd8b6bb9b60a72194cabfefa87812cbd",
+                    "employee": {
+                        "fullName": "Alexander Nepomeluev"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": null
+                },
+                {
+                    "contractId": "e167606ad8125bef29755c6265f601f896c977c3",
+                    "employee": {
+                        "fullName": "Ernest Berlin"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                },
+                {
+                    "contractId": "4cece768b4d791d6f86c6da0b1b1fa01538b604a",
+                    "employee": {
+                        "fullName": "Henry McKinsey"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                },
+                {
+                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
+                    "employee": {
+                        "fullName": "Simon Slow"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                },
+                {
+                    "contractId": "242a8d1e4a58e9741b6e8f509cb3d63abb8540bb",
+                    "employee": {
+                        "fullName": "Vlad Belousov"
+                    },
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                },
+            ],
+            "meta": {
+                "pagination": {
+                    "total": 96,
+                    "count": 8,
+                    "perPage": 8,
+                    "currentPage": 1,
+                    "lastPage": 12,
+                    "prevPageUrl": "http://contracts:3000/api/contracts?page=0",
+                    "nextPageUrl": "http://contracts:3000/api/contracts?page=1",
+                    "from": 0,
+                    "to": 8
+                }
+            }
+
+### Create [POST]
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/vnd.jincor+json; version=1
+
+    + Body
+
+            {
+            	"startDate": "01/01/2018",
+                "contractNumber": 1,
+                "wallets": {
+                	"employer": "0x8336d3f6b4bbc09d780ecba36591c1591067d8f3",
+                	"employee": "0x261567559acebad1a098800b2db686344f842b3f"
+                },
+                "jobTitle": "Developer",
+                "typeOfEmployment": "full",
+                "periodOfAgreement": "fixed",
+                "periodStartDate": "01/01/2018",
+                "periodEndDate": "12/01/2018",
+                "compensation": {
+                  "salaryAmount": {
+                    "currency":"ETH",
+                    "amount":"1"
+                   },
+                  "dayOfPayments": 1
+                }
+            }
+
++ Response 200 (application/json)
+
+            {
+                "txHash": "0x4d4547854e08c1fc5533b9ec9148d60172be9f8f6c5fc56691cfc96adc327c67"
+            }
+
+## Employee Contract [/api/contracts/{CONTRACT_ID}]
+
++ Parameters
+    + CONTRACT_ID (string) - existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).
+
+### Get [GET]
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/vnd.jincor+json; version=1
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "data": {
+                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
+                    "employeeId": "e316a9e8cba9131b675bfec0f0a662eea5fca517",
+                    "startDate": "10/21/2017",
+                    "contractNumber": "192",
+                    "jobTitle": "Graphics Designer",
+                    "jobDescription": "Design of all graphics materials for company",
+                    "typeOfEmployment": "full",
+                    "periodOfAgreement": "fixed",
+                    "periodStartDate": "10/21/2017",
+                    "periodEndDate": "10/21/2018",
+                    "compensation": "",
+                    "salaryAmount": {
+                        "currency": "ETH",
+                        "amount": "300"
+                    },
+                    "dayOfPayments": "25",
+                    "additionalClauses": "",
+                    "isSignedByEmployee": true,
+                    "createdAt": "01/10/2017",
+                    "signedAt": "01/10/2017"
+                }
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404
+            }
+
+## Invoke Contract Method: Sign [/api/contracts/{CONTRACT_ID}/actions/sign]
+
++ Parameters
+    + CONTRACT_ID (string) - existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).
+
+### Sign [POST]
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/vnd.jincor+json; version=1
+
+    + Body
+
+            {
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "data": {
+                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
+                    "employeeId": "e316a9e8cba9131b675bfec0f0a662eea5fca517",
+                    "verificationId": "1c7d2871-8af6-4e2d-a9a5-b5e7ab41a53e"
+                }
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404
+            }
+
+## Invoke Contract Method: Verify [/api/contracts/{CONTRACT_ID}/actions/verify]
+
++ Parameters
+    + CONTRACT_ID (string) - existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).
+
+### Verify [POST]
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/vnd.jincor+json; version=1
+
+    + Body
+
+            {
+                "verificationId": "1c7d2871-8af6-4e2d-a9a5-b5e7ab41a53e",
+                "verificationCode": "948 033"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "data": {
+                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
+                    "employeeId": "e316a9e8cba9131b675bfec0f0a662eea5fca517",
+                    "signedAt": "01/10/2017"
+                }
+            }
+
++ Response 404 (application/json)
+
+            {
+                "status": 404
+            }

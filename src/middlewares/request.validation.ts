@@ -54,3 +54,35 @@ export function TransactionVerifyRequestValidator(req: Request, res: Response, n
     return next();
   }
 }
+
+export function EmploymentScDeployValidator(req: Request, res: Response, next: NextFunction) {
+  const schema = Joi.object().keys({
+    startDate: Joi.string().required(),
+    contractNumber: Joi.number().min(1).required(),
+    wallets: Joi.object().keys({
+      employer: Joi.string().required(),
+      employee: Joi.string().required()
+    }).required(),
+    jobTitle: Joi.string().required(),
+    typeOfEmployment: Joi.string().required(),
+    periodOfAgreement: Joi.string().required(),
+    periodStartDate: Joi.string(),
+    periodEndDate: Joi.string(),
+    compensation: Joi.object().keys({
+      salaryAmount: Joi.object().keys({
+        currency: Joi.string().required(),
+        amount: Joi.string().required()
+      }).required(),
+      dayOfPayments: Joi.number().min(1).max(28).required()
+    }).required(),
+    additionalClauses: Joi.string()
+  });
+
+  const result = Joi.validate(req.body, schema, options);
+
+  if (result.error) {
+    return res.status(422).json(result);
+  } else {
+    return next();
+  }
+}

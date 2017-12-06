@@ -7,30 +7,50 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3000:3000
-      - 80:3000
       - 4000:4000
     depends_on:
       - mongo
-    restart: always
+      - auth
+      - verify
+    links:
+      - mongo
+      - auth
+      - verify
+    volumes:
+      - ./:/usr/src/app
+    networks:
+      default:
+        ipv4_address: 10.101.0.2
+    tty: true
 
   mongo:
-    image: jincort/backend-mongodb:latest
+    image: jincort/backend-mongodb:production
+    networks:
+      default:
+        ipv4_address: 10.101.0.3
+    volumes:
+      - ./storage/mongodb:/data/db
+    ports:
+      - 27017:27017
+      - 28017:28017
 
   auth:
     image: jincort/backend-auth:production
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      THROTTLER_WHITE_LIST: 127.0.0.1,10.5.0.2,10.5.0.3
-      TENANT_WHITE_LIST: 127.0.0.1,10.5.0.2,10.5.0.3
+      THROTTLER_WHITE_LIST: 127.0.0.1,10.101.0.2,10.101.0.6
+      TENANT_WHITE_LIST: 127.0.0.1,10.101.0.2,10.101.0.6
       FORCE_HTTPS: disabled
       JWT_KEY: JwtSecret
     ports:
-      - 9300: 3000
-    volumes:
-      - /usr/src/app
+      - "3000"
+      - "4000"
     links:
       - redis
+    networks:
+      default:
+        ipv4_address: 10.101.0.4
     depends_on:
       - redis
 
@@ -38,6 +58,9 @@ services:
     image: jincort/backend-redis:production
     volumes:
       - ./storage/redis:/data
+    networks:
+      default:
+        ipv4_address: 10.101.0.5
 
   verify:
     image: jincort/backend-verify:dev-62b3a0d
@@ -49,14 +72,21 @@ services:
       MAIL_DRIVER: ${MAIL_DRIVER}
       MAILGUN_SECRET: ${MAILGUN_SECRET}
       MAILGUN_DOMAIN: ${MAILGUN_DOMAIN}
+    networks:
+      default:
+        ipv4_address: 10.101.0.6
     ports:
       - "3000"
       - "4000"
-    volumes:
-      - ./:/usr/src/app
-      - /usr/src/app/node_modules
     links:
       - redis
     depends_on:
       - redis
 
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.101.0.0/16
+          gateway: 10.101.0.1
