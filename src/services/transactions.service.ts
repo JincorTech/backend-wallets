@@ -7,7 +7,7 @@ import { TransactionRepository } from './repositories/transaction.repository';
 import successEmailTransaction from '../emails/success';
 
 @injectable()
-export class PendingTransactionPorcessor {
+export class PendingTransactionProcessor {
   private logger = Logger.getInstance('PENDING_TRANSACTION_PROCESSOR');
 
   constructor(
@@ -97,7 +97,7 @@ export class PendingTransactionPorcessor {
       const transactions = await this.transactions.getAllByStatusAndCurrency('pending', 'ETH');
       if (transactions.length) {
         this.logger.verbose('Transactions in pending...', transactions.length);
-        const transStatuses = await this.web3.getTransactionGrouppedStatuses(transactions.map(t => t.id));
+        const transStatuses = await this.web3.getTransactionGroupedStatuses(transactions.map(t => t.id));
         this.logger.verbose('Transactions statuses success/failure', transStatuses.success, transStatuses.failure);
         if (transStatuses.failure.length || transStatuses.success.length) {
           this.logger.verbose('Update pending transactions...');

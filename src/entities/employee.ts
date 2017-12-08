@@ -1,5 +1,3 @@
-import { Transaction } from './transaction';
-
 export interface Employee {
   id: string;
   wallet: string;

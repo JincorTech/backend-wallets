@@ -135,18 +135,6 @@ declare interface InputUserData extends UserData {
   password: string;
 }
 
-declare interface Wallet {
-  ticker: string;
-  address: string;
-  balance: string;
-  salt?: string;
-}
-
-declare interface NewWallet extends Wallet {
-  privateKey: string;
-  mnemonic: string;
-}
-
 declare interface CreatedUserData extends UserData {
   id: string;
   verification: {
@@ -176,11 +164,6 @@ declare interface ActivationUserData {
   email: string;
   verificationId: string;
   code: string;
-}
-
-declare interface ActivationResult {
-  accessToken: string;
-  wallets: Array<NewWallet>;
 }
 
 declare interface InitiateLoginInput {
@@ -261,30 +244,18 @@ interface TransactionInput {
   amount: string;
   gas: number;
   gasPrice: string;
-}
-
-declare interface UserServiceInterface {
-  create(userData: InputUserData): Promise<any>;
-  activate(activationData: ActivationUserData): Promise<ActivationResult>;
-  initiateLogin(inputData: InitiateLoginInput, ip: string): Promise<InitiateLoginResult>;
-  initiateChangePassword(user: any, params: InitiateChangePasswordInput): Promise<BaseInitiateResult>;
-  verifyChangePassword(user: any, params: InitiateChangePasswordInput): Promise<AccessTokenResponse>;
-  initiateEnable2fa(user: any): Promise<BaseInitiateResult>;
-  verifyEnable2fa(user: any, params: VerificationInput): Promise<Enable2faResult>;
-  initiateDisable2fa(user: any): Promise<BaseInitiateResult>;
-  verifyDisable2fa(user: any, params: VerificationInput): Promise<Enable2faResult>;
-  initiateResetPassword(params: ResetPasswordInput): Promise<BaseInitiateResult>;
-  verifyResetPassword(params: ResetPasswordInput): Promise<AccessTokenResponse>;
-  verifyLogin(inputData: VerifyLoginInput): Promise<VerifyLoginResult>;
-  invite(user: any, params: any): Promise<InviteResultArray>;
-  getUserInfo(user: any): Promise<UserInfo>;
-}
-
-declare interface KycClientInterface {
-  init(investor: any): Promise<KycInitResult>;
-  getScanReferenceStatus(scanId: string): Promise<KycScanStatus>;
+  data?: string;
 }
 
 declare interface EmailServiceInterface {
   send(sender: string, recipient: string, subject: string, text: string): Promise<any>;
+}
+
+declare interface DeployContractInput {
+  from: string;
+  mnemonic: string;
+  salt: string;
+  abi: any;
+  constructorArguments: any;
+  byteCode: string;
 }

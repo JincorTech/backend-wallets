@@ -15,7 +15,7 @@ import handle from './middlewares/error.handler';
 import config from './config';
 import { Logger, newConsoleTransport } from './logger';
 import { container } from './ioc.container';
-import { PendingTransactionPorcessor } from './services/transactions.service';
+import { PendingTransactionProcessor } from './services/transactions.service';
 
 winston.configure({
   level: config.logging.level,
@@ -99,7 +99,7 @@ if (!config.server.http && !config.server.https) {
 }
 
 if (!process.env.NO_WAIT_TRANSACTION) {
-  const transactionProcessor = container.get<PendingTransactionPorcessor>('PendingTransactionPorcessor');
+  const transactionProcessor = container.get<PendingTransactionProcessor>('PendingTransactionProcessor');
   transactionProcessor.connectContractsWs();
   transactionProcessor.connectEthereumBus();
 }

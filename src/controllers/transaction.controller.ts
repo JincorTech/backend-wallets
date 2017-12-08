@@ -84,7 +84,7 @@ export class TransactionController implements interfaces.Controller {
       let personalWallet: Wallet;
 
       if (req.user.scope === 'company-admin') {
-        corporateWallet = (await this.walletRepository.getAllCorparateByCompanyId(companyId))
+        corporateWallet = (await this.walletRepository.getAllCorporateByCompanyId(companyId))
           .filter(w => w.currency === req.body.currency).pop();
       }
       wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
@@ -151,7 +151,7 @@ export class TransactionController implements interfaces.Controller {
       let personalWallet: Wallet;
 
       if (req.user.scope === 'company-admin') {
-        corporateWallet = (await this.walletRepository.getAllCorparateByCompanyId(companyId))
+        corporateWallet = (await this.walletRepository.getAllCorporateByCompanyId(companyId))
           .filter(w => w.currency === transaction.currency).pop();
       }
       wallet = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId))
@@ -174,19 +174,17 @@ export class TransactionController implements interfaces.Controller {
       transaction.status = 'pending';
 
       try {
-        let transactionId = '';
         if (transaction.currency === 'JCR') {
-          const hlfTransaction = await this.contracts.transferJcrToken(req.token, isCorporate, transaction.receiver, transaction.amount,);
+          const hlfTransaction = await this.contracts.transferJcrToken(req.token, isCorporate, transaction.receiver, transaction.amount);
           transaction.id = '0x' + hlfTransaction.result.transaction;
         } else {
-          const ethTransaction = await this.web3.sendTransactionByMnemonic({
+          transaction.id = await this.web3.sendTransactionByMnemonic({
             from: wallet.address,
             to: transaction.receiver,
             amount: '' + transaction.amount,
             gas: 40000,
             gasPrice: '21'
           }, wallet.mnemonics, wallet.salt);
-          transaction.id = ethTransaction;
         }
       } catch (error) {
         transaction.status = 'failure';

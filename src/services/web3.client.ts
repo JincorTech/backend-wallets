@@ -10,7 +10,7 @@ import config from '../config';
 import 'reflect-metadata';
 import * as lodash from 'lodash';
 
-export interface TransactionsGrouppedByStatuses {
+export interface TransactionsGroupedByStatuses {
   success?: Array<string>;
   failure?: Array<string>;
 }
@@ -51,7 +51,8 @@ export class Web3Client {
       from: input.from,
       to: input.to,
       gas: input.gas,
-      gasPrice: this.web3.utils.toWei(input.gasPrice, 'gwei')
+      gasPrice: this.web3.utils.toWei(input.gasPrice, 'gwei'),
+      data: input.data
     };
 
     return new Promise<string>((resolve, reject) => {
@@ -118,6 +119,7 @@ export class Web3Client {
           const BN = this.web3.utils.BN;
           const txFee = new BN(input.gas).mul(new BN(this.web3.utils.toWei(input.gasPrice, 'gwei')));
           const total = new BN(this.web3.utils.toWei(input.amount)).add(txFee);
+
           resolve(total.lte(new BN(balance)));
         })
         .catch((error) => {
@@ -126,7 +128,7 @@ export class Web3Client {
     });
   }
 
-  async getTransactionGrouppedStatuses(transactionIds: string[]): Promise<TransactionsGrouppedByStatuses> {
+  async getTransactionGroupedStatuses(transactionIds: string[]): Promise<TransactionsGroupedByStatuses> {
     const parts = lodash.chunk(transactionIds, 5);
     let data = [];
 
@@ -156,6 +158,25 @@ export class Web3Client {
     };
 
     this.web3.setProvider(webSocketProvider);
+  }
+
+  async deployContract(params: DeployContractInput): Promise<string> {
+    const contract = new this.web3.eth.Contract(params.abi);
+    const deploy = contract.deploy({
+      data: params.byteCode,
+      arguments: params.constructorArguments
+    });
+
+    const txInput = {
+      from: params.from,
+      to: null,
+      amount: '0',
+      gas: (await deploy.estimateGas()) + 300000,
+      gasPrice: '21',
+      data: deploy.encodeABI()
+    };
+
+    return this.sendTransactionByMnemonic(txInput, params.mnemonic, params.salt);
   }
 }
 

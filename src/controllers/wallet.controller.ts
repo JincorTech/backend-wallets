@@ -79,7 +79,7 @@ export class WalletController implements interfaces.Controller {
 
       const isCorporate = req.user.scope === 'company-admin';
       if (isCorporate) {
-        wallets = wallets.concat(await this.walletRepository.getAllCorparateByCompanyId(companyId));
+        wallets = wallets.concat(await this.walletRepository.getAllCorporateByCompanyId(companyId));
       }
 
       const employeeMap = await this.getEmployeeMap(req.token, wallets);
@@ -134,7 +134,7 @@ export class WalletController implements interfaces.Controller {
         if (req.user.scope !== 'company-admin') {
           throw new Error('User isn\'t company admin');
         }
-        wallets = await this.walletRepository.getAllCorparateByCompanyId(companyId);
+        wallets = await this.walletRepository.getAllCorporateByCompanyId(companyId);
         if (wallets.length && wallets.length !== 2) {
           throw new Error('Already exists, but damaged data');
         }

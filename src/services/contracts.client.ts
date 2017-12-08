@@ -4,7 +4,7 @@ import { injectable } from 'inversify';
 import config from '../config';
 import { Logger } from '../logger';
 import * as lodash from 'lodash';
-import { TransactionsGrouppedByStatuses } from './web3.client';
+import { TransactionsGroupedByStatuses } from './web3.client';
 
 export interface RegisterResult {
   username: string;
@@ -26,7 +26,7 @@ export class ContractsClient {
   async registerUser(jwtToken: string, login: string, password: string, isCorporate: boolean): Promise<RegisterResult> {
     this.logger.verbose('Register user', login);
 
-    const result = await request.json<RegisterResult>(`/api/accounts`, {
+    return request.json<RegisterResult>(`/api/accounts`, {
       baseUrl: config.contracts.baseUrl,
       auth: {
         bearer: jwtToken
@@ -38,8 +38,6 @@ export class ContractsClient {
         isCorporate
       }
     });
-
-    return result;
   }
 
   async getTransactionStatus(jwtToken: string, transactionHash: string): Promise<string> {
@@ -70,7 +68,7 @@ export class ContractsClient {
     }
   }
 
-  async getTransactionGrouppedStatuses(jwtToken: string, transactionIds: string[]): Promise<TransactionsGrouppedByStatuses> {
+  async getTransactionGroupedStatuses(jwtToken: string, transactionIds: string[]): Promise<TransactionsGroupedByStatuses> {
     const parts = lodash.chunk(transactionIds, 5);
     let data = [];
 
@@ -93,7 +91,7 @@ export class ContractsClient {
     this.logger.verbose('Transfer jcr token', toAddress, amount);
 
     try {
-      const result = await request.json<TransactionResult>(`/api/networks/${config.contracts.network}/contracts/${config.contracts.jincorToken.address}/actions/invoke`, {
+      return await request.json<TransactionResult>(`/api/networks/${config.contracts.network}/contracts/${config.contracts.jincorToken.address}/actions/invoke`, {
         baseUrl: config.contracts.baseUrl,
         auth: {
           bearer: jwtToken
@@ -108,8 +106,6 @@ export class ContractsClient {
           commitTransaction: true
         }
       });
-
-      return result;
     } catch (error) {
       this.logger.error('transferJcrToken failed with', error);
       throw new Error('Can\'t transfer tokens');

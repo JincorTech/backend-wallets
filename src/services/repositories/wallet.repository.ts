@@ -8,7 +8,7 @@ import { TransactionRepository } from './transaction.repository';
 
 export interface WalletRepository {
   save(wallet: Wallet & {_id?: any}): Promise<any>;
-  getAllCorparateByCompanyId(companyId: string): Promise<Array<Wallet>>;
+  getAllCorporateByCompanyId(companyId: string): Promise<Array<Wallet>>;
   getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Array<Wallet>>;
 }
 
@@ -38,7 +38,7 @@ export class MongoWalletRepository implements WalletRepository {
    * @param userId
    * @param companyId
    */
-  async getAllCorparateByCompanyId(companyId: string): Promise<Array<Wallet>> {
+  async getAllCorporateByCompanyId(companyId: string): Promise<Array<Wallet>> {
     this.logger.debug('Query all corporate by company', companyId);
 
     const wallets: Array<Wallet> = await (await this.mongoConnector.getDb()).collection('wallets').find({
