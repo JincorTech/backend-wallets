@@ -41,6 +41,8 @@ export class ContractsController {
       throw Error('Incorrect employer wallet address');
     }
 
+    req.body.createdAt = moment().format('MM/DD/YYYY');
+    req.body.singedAt = null;
     const id = (await this.contractRepository.save(req.body)).ops[0]._id;
 
     let ip = req.header('cf-connecting-ip') || req.ip;
@@ -74,7 +76,7 @@ export class ContractsController {
       data: {
         contractId: id,
         verificationId: verifyResponse.verificationId,
-        createdAt: moment().format('MM/DD/YYYY')
+        createdAt: req.body.createdAt
       }
     });
   }
@@ -142,6 +144,43 @@ export class ContractsController {
     res.json({
       status: 200,
       data: contract
+    });
+  }
+
+  @httpGet(
+    '/',
+    'AuthMiddleware',
+    'JwtThrottlingMiddleware'
+  )
+  async getAllContracts(req: AuthenticatedRequest, res: Response): Promise<void> {
+    let wallets;
+    let contracts;
+
+    const splitted = req.user.login.split(':');
+    const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
+
+    if (req.user.scope === 'company-admin') {
+      wallets = (await this.walletRepository.getAllCorporateByCompanyId(companyId)).map((item) => {
+        return item.address;
+      });
+      contracts = await this.contractRepository.getByEmployerAddresses(wallets);
+    } else {
+      wallets = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId)).map((item) => {
+        return item.address;
+      });
+      contracts = await this.contractRepository.getByEmployeeAddresses(wallets);
+    }
+
+    res.json({
+      status: 200,
+      data: contracts.map((item) => {
+        return {
+          contractId: item._id,
+          employeeId: item.employeeId,
+          createdAt: item.createdAt,
+          signedAt: item.signedAt
+        };
+      })
     });
   }
 }

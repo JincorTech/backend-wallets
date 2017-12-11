@@ -1,6 +1,8 @@
 export interface EmploymentAgreementContract {
   id: string;
   startDate: string;
+  createdAt: string;
+  signedAt: string;
   contractNumber: number;
   employeeId: string;
   wallets: {

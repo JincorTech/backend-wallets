@@ -8,8 +8,8 @@ import { TransactionRepository } from './transaction.repository';
 
 export interface WalletRepository {
   save(wallet: Wallet & {_id?: any}): Promise<any>;
-  getAllCorporateByCompanyId(companyId: string): Promise<Array<Wallet>>;
-  getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Array<Wallet>>;
+  getAllCorporateByCompanyId(companyId: string): Promise<Wallet[]>;
+  getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Wallet[]>;
 }
 
 @injectable()
