@@ -2,6 +2,7 @@ export interface EmploymentAgreementContract {
   id: string;
   startDate: string;
   contractNumber: number;
+  employeeId: string;
   wallets: {
     employer: string;
     employee: string;
@@ -18,5 +19,8 @@ export interface EmploymentAgreementContract {
     };
     dayOfPayments: number;
   };
+  jobDescription: string;
   additionalClauses: string;
+  txHash: string;
+  contractAddress: string;
 }

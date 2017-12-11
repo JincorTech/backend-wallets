@@ -18,7 +18,7 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     @inject('ContractRepository') private contractRepository: ContractRepository
   ) { }
 
-  async deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
+  deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
     let periodTypeNumerical;
 
     switch (input.periodOfAgreement) {
@@ -63,9 +63,7 @@ export class ContractsDeployer implements ContractsDeployerInterface {
       constructorArguments
     };
 
-    const txHash = await this.web3.deployContract(deployInput);
-    await this.contractRepository.save(input);
-    return txHash;
+    return this.web3.deployContract(deployInput);
   }
 }
 

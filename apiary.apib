@@ -124,29 +124,37 @@ HOST: http://contracts:3000/
 
             {
             	"startDate": "01/01/2018",
-                "contractNumber": 1,
-                "wallets": {
-                	"employer": "0x8336d3f6b4bbc09d780ecba36591c1591067d8f3",
-                	"employee": "0x261567559acebad1a098800b2db686344f842b3f"
-                },
-                "jobTitle": "Developer",
-                "typeOfEmployment": "full",
-                "periodOfAgreement": "fixed",
-                "periodStartDate": "01/01/2018",
-                "periodEndDate": "12/01/2018",
-                "compensation": {
-                  "salaryAmount": {
-                    "currency":"ETH",
-                    "amount":"1"
-                   },
-                  "dayOfPayments": 1
-                }
+              "contractNumber": 1,
+              "employeeId": "employeeId",
+              "wallets": {
+                "employer": "0x8336d3f6b4bbc09d780ecba36591c1591067d8f3",
+                "employee": "0x261567559acebad1a098800b2db686344f842b3f"
+              },
+              "jobTitle": "Developer",
+              "jobDescription": "Wallets backend developer",
+              "typeOfEmployment": "full",
+              "periodOfAgreement": "fixed",
+              "periodStartDate": "01/01/2018",
+              "periodEndDate": "12/01/2018",
+              "compensation": {
+                "salaryAmount": {
+                  "currency":"ETH",
+                  "amount":"1"
+                 },
+                "dayOfPayments": 1
+              },
+              "additionalClauses": "Some clauses here"
             }
 
 + Response 200 (application/json)
 
             {
-                "txHash": "0x4d4547854e08c1fc5533b9ec9148d60172be9f8f6c5fc56691cfc96adc327c67"
+                "status": 200,
+                "data": {
+                    "contractId": "5a2e651441313204d191b012",
+                    "verificationId": "cb2b02da-fcd1-4ab8-bae4-0c1825d1994f",
+                    "createdAt": "12/11/2017"
+                }
             }
 
 ## Employee Contract [/api/contracts/{CONTRACT_ID}]
@@ -167,30 +175,27 @@ HOST: http://contracts:3000/
             {
                 "status": 200,
                 "data": {
-                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
-                    "employee": {
-                      "id": "e316a9e8cba9131b675bfec0f0a662eea5fca517",
-                      "fullName": "John Doe",
-                      "avatar": "avatar"
-                    }
-                    "startDate": "10/21/2017",
-                    "contractNumber": "192",
-                    "jobTitle": "Graphics Designer",
-                    "jobDescription": "Design of all graphics materials for company",
+                    "_id": "5a2e651441313204d191b012",
+                    "startDate": "01/01/2018",
+                    "contractNumber": 1,
+                    "employeeId": "123",
+                    "wallets": {
+                        "employer": "0x8336d3f6b4bbc09d780ecba36591c1591067d8f3",
+                        "employee": "0x261567559acebad1a098800b2db686344f842b3f"
+                    },
+                    "jobTitle": "Developer",
                     "typeOfEmployment": "full",
                     "periodOfAgreement": "fixed",
-                    "periodStartDate": "10/21/2017",
-                    "periodEndDate": "10/21/2018",
-                    "compensation": "",
-                    "salaryAmount": {
-                        "currency": "ETH",
-                        "amount": "300"
+                    "periodStartDate": "01/01/2018",
+                    "periodEndDate": "12/01/2018",
+                    "compensation": {
+                        "salaryAmount": {
+                            "currency": "ETH",
+                            "amount": "1"
+                        },
+                        "dayOfPayments": 1
                     },
-                    "dayOfPayments": "25",
-                    "additionalClauses": "",
-                    "isSignedByEmployee": true,
-                    "createdAt": "01/10/2017",
-                    "signedAt": "01/10/2017"
+                    "txHash": "0x49a9294075a225b76a878f547773bd916a7498f57da9fef853572736a5906fc5"
                 }
             }
 
@@ -264,13 +269,9 @@ HOST: http://contracts:3000/
             {
                 "status": 200,
                 "data": {
-                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
-                    "employee": {
-                      "id": "e316a9e8cba9131b675bfec0f0a662eea5fca517",
-                      "fullName": "John Doe",
-                      "avatar": "avatar"
-                    },
-                    "signedAt": "01/10/2017"
+                    "contractId": "5a2e651441313204d191b012",
+                    "employeeId": "123",
+                    "signedAt": "12/11/2017"
                 }
             }
 

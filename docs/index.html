@@ -96,11 +96,13 @@
     }</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></div><div class="middle"><div id="employee-contracts-get" class="action get"><h4 class="action-heading"><div class="name">List</div><a href="#employee-contracts-get" class="method get">GET</a><code class="uri">/api/contracts</code></h4></div></div><hr class="split"><div class="right"><div class="definition"><span class="method post">POST</span>&nbsp;<span class="uri"><span class="hostname">http://contracts:3000/</span>/api/contracts</span></div><div class="tabs"><div class="example-names"><span>Requests</span><span class="tab-button">example 1</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span><br><span class="hljs-attribute">Authorization</span>: <span class="hljs-string">Bearer {JWT_TOKEN}</span><br><span class="hljs-attribute">Accept</span>: <span class="hljs-string">application/vnd.jincor+json; version=1</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
   "<span class="hljs-attribute">startDate</span>": <span class="hljs-value"><span class="hljs-string">"01/01/2018"</span></span>,
   "<span class="hljs-attribute">contractNumber</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+  "<span class="hljs-attribute">employeeId</span>": <span class="hljs-value"><span class="hljs-string">"employeeId"</span></span>,
   "<span class="hljs-attribute">wallets</span>": <span class="hljs-value">{
     "<span class="hljs-attribute">employer</span>": <span class="hljs-value"><span class="hljs-string">"0x8336d3f6b4bbc09d780ecba36591c1591067d8f3"</span></span>,
     "<span class="hljs-attribute">employee</span>": <span class="hljs-value"><span class="hljs-string">"0x261567559acebad1a098800b2db686344f842b3f"</span>
   </span>}</span>,
   "<span class="hljs-attribute">jobTitle</span>": <span class="hljs-value"><span class="hljs-string">"Developer"</span></span>,
+  "<span class="hljs-attribute">jobDescription</span>": <span class="hljs-value"><span class="hljs-string">"Wallets backend developer"</span></span>,
   "<span class="hljs-attribute">typeOfEmployment</span>": <span class="hljs-value"><span class="hljs-string">"full"</span></span>,
   "<span class="hljs-attribute">periodOfAgreement</span>": <span class="hljs-value"><span class="hljs-string">"fixed"</span></span>,
   "<span class="hljs-attribute">periodStartDate</span>": <span class="hljs-value"><span class="hljs-string">"01/01/2018"</span></span>,
@@ -111,38 +113,41 @@
       "<span class="hljs-attribute">amount</span>": <span class="hljs-value"><span class="hljs-string">"1"</span>
     </span>}</span>,
     "<span class="hljs-attribute">dayOfPayments</span>": <span class="hljs-value"><span class="hljs-number">1</span>
-  </span>}
+  </span>}</span>,
+  "<span class="hljs-attribute">additionalClauses</span>": <span class="hljs-value"><span class="hljs-string">"Some clauses here"</span>
 </span>}</code></pre><div style="height: 1px;"></div></div></div><div class="tabs"><div class="example-names"><span>Responses</span><span class="tab-button">200</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
-  "<span class="hljs-attribute">txHash</span>": <span class="hljs-value"><span class="hljs-string">"0x4d4547854e08c1fc5533b9ec9148d60172be9f8f6c5fc56691cfc96adc327c67"</span>
+  "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-number">200</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">contractId</span>": <span class="hljs-value"><span class="hljs-string">"5a2e651441313204d191b012"</span></span>,
+    "<span class="hljs-attribute">verificationId</span>": <span class="hljs-value"><span class="hljs-string">"cb2b02da-fcd1-4ab8-bae4-0c1825d1994f"</span></span>,
+    "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value"><span class="hljs-string">"12/11/2017"</span>
+  </span>}
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></div><div class="middle"><div id="employee-contracts-post" class="action post"><h4 class="action-heading"><div class="name">Create</div><a href="#employee-contracts-post" class="method post">POST</a><code class="uri">/api/contracts</code></h4></div></div><hr class="split"><div class="middle"><div id="employee-contract" class="resource"><h3 class="resource-heading">Employee Contract <a href="#employee-contract" class="permalink">&para;</a></h3></div></div><div class="right"><div class="definition"><span class="method get">GET</span>&nbsp;<span class="uri"><span class="hostname">http://contracts:3000/</span>/api/contracts/<span class="hljs-attribute" title="CONTRACT_ID">CONTRACT_ID</span></span></div><div class="tabs"><div class="example-names"><span>Requests</span><span class="tab-button">example 1</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span><br><span class="hljs-attribute">Authorization</span>: <span class="hljs-string">Bearer {JWT_TOKEN}</span><br><span class="hljs-attribute">Accept</span>: <span class="hljs-string">application/vnd.jincor+json; version=1</span></code></pre><div style="height: 1px;"></div></div></div><div class="tabs"><div class="example-names"><span>Responses</span><span class="tab-button">200</span><span class="tab-button">404</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
-        "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-number">200</span></span>,
-        "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-            "<span class="hljs-attribute">contractId</span>": <span class="hljs-value"><span class="hljs-string">"6174b0f53573874343a4d915d4f5b6876a9a15e5"</span></span>,
-            "<span class="hljs-attribute">employee</span>": <span class="hljs-value">{
-              "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-string">"e316a9e8cba9131b675bfec0f0a662eea5fca517"</span></span>,
-              "<span class="hljs-attribute">fullName</span>": <span class="hljs-value"><span class="hljs-string">"John Doe"</span></span>,
-              "<span class="hljs-attribute">avatar</span>": <span class="hljs-value"><span class="hljs-string">"avatar"</span>
-            </span>}
-            <span class="hljs-string">"startDate"</span>: <span class="hljs-string">"10/21/2017"</span></span>,
-            "<span class="hljs-attribute">contractNumber</span>": <span class="hljs-value"><span class="hljs-string">"192"</span></span>,
-            "<span class="hljs-attribute">jobTitle</span>": <span class="hljs-value"><span class="hljs-string">"Graphics Designer"</span></span>,
-            "<span class="hljs-attribute">jobDescription</span>": <span class="hljs-value"><span class="hljs-string">"Design of all graphics materials for company"</span></span>,
-            "<span class="hljs-attribute">typeOfEmployment</span>": <span class="hljs-value"><span class="hljs-string">"full"</span></span>,
-            "<span class="hljs-attribute">periodOfAgreement</span>": <span class="hljs-value"><span class="hljs-string">"fixed"</span></span>,
-            "<span class="hljs-attribute">periodStartDate</span>": <span class="hljs-value"><span class="hljs-string">"10/21/2017"</span></span>,
-            "<span class="hljs-attribute">periodEndDate</span>": <span class="hljs-value"><span class="hljs-string">"10/21/2018"</span></span>,
-            "<span class="hljs-attribute">compensation</span>": <span class="hljs-value"><span class="hljs-string">""</span></span>,
-            "<span class="hljs-attribute">salaryAmount</span>": <span class="hljs-value">{
-                "<span class="hljs-attribute">currency</span>": <span class="hljs-value"><span class="hljs-string">"ETH"</span></span>,
-                "<span class="hljs-attribute">amount</span>": <span class="hljs-value"><span class="hljs-string">"300"</span>
-            </span>}</span>,
-            "<span class="hljs-attribute">dayOfPayments</span>": <span class="hljs-value"><span class="hljs-string">"25"</span></span>,
-            "<span class="hljs-attribute">additionalClauses</span>": <span class="hljs-value"><span class="hljs-string">""</span></span>,
-            "<span class="hljs-attribute">isSignedByEmployee</span>": <span class="hljs-value"><span class="hljs-literal">true</span></span>,
-            "<span class="hljs-attribute">createdAt</span>": <span class="hljs-value"><span class="hljs-string">"01/10/2017"</span></span>,
-            "<span class="hljs-attribute">signedAt</span>": <span class="hljs-value"><span class="hljs-string">"01/10/2017"</span>
-        </span>}
-    </span>}</code></pre><div style="height: 1px;"></div></div></div></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
+  "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-number">200</span></span>,
+  "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
+    "<span class="hljs-attribute">_id</span>": <span class="hljs-value"><span class="hljs-string">"5a2e651441313204d191b012"</span></span>,
+    "<span class="hljs-attribute">startDate</span>": <span class="hljs-value"><span class="hljs-string">"01/01/2018"</span></span>,
+    "<span class="hljs-attribute">contractNumber</span>": <span class="hljs-value"><span class="hljs-number">1</span></span>,
+    "<span class="hljs-attribute">employeeId</span>": <span class="hljs-value"><span class="hljs-string">"123"</span></span>,
+    "<span class="hljs-attribute">wallets</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">employer</span>": <span class="hljs-value"><span class="hljs-string">"0x8336d3f6b4bbc09d780ecba36591c1591067d8f3"</span></span>,
+      "<span class="hljs-attribute">employee</span>": <span class="hljs-value"><span class="hljs-string">"0x261567559acebad1a098800b2db686344f842b3f"</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">jobTitle</span>": <span class="hljs-value"><span class="hljs-string">"Developer"</span></span>,
+    "<span class="hljs-attribute">typeOfEmployment</span>": <span class="hljs-value"><span class="hljs-string">"full"</span></span>,
+    "<span class="hljs-attribute">periodOfAgreement</span>": <span class="hljs-value"><span class="hljs-string">"fixed"</span></span>,
+    "<span class="hljs-attribute">periodStartDate</span>": <span class="hljs-value"><span class="hljs-string">"01/01/2018"</span></span>,
+    "<span class="hljs-attribute">periodEndDate</span>": <span class="hljs-value"><span class="hljs-string">"12/01/2018"</span></span>,
+    "<span class="hljs-attribute">compensation</span>": <span class="hljs-value">{
+      "<span class="hljs-attribute">salaryAmount</span>": <span class="hljs-value">{
+        "<span class="hljs-attribute">currency</span>": <span class="hljs-value"><span class="hljs-string">"ETH"</span></span>,
+        "<span class="hljs-attribute">amount</span>": <span class="hljs-value"><span class="hljs-string">"1"</span>
+      </span>}</span>,
+      "<span class="hljs-attribute">dayOfPayments</span>": <span class="hljs-value"><span class="hljs-number">1</span>
+    </span>}</span>,
+    "<span class="hljs-attribute">txHash</span>": <span class="hljs-value"><span class="hljs-string">"0x49a9294075a225b76a878f547773bd916a7498f57da9fef853572736a5906fc5"</span>
+  </span>}
+</span>}</code></pre><div style="height: 1px;"></div></div></div></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
   "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-number">404</span>
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></div><div class="middle"><div id="employee-contract-get" class="action get"><h4 class="action-heading"><div class="name">Get</div><a href="#employee-contract-get" class="method get">GET</a><code class="uri">/api/contracts/{CONTRACT_ID}</code></h4><div class="title"><strong>URI Parameters</strong><div class="collapse-button show"><span class="close">Hide</span><span class="open">Show</span></div></div><div class="collapse-content"><dl class="inner"><dt>CONTRACT_ID</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).</p>
 </dd></dl></div></div></div><hr class="split"><div class="middle"><div id="invoke-contract-method-sign" class="resource"><h3 class="resource-heading">Invoke Contract Method: Sign <a href="#invoke-contract-method-sign" class="permalink">&para;</a></h3></div></div><div class="right"><div class="definition"><span class="method post">POST</span>&nbsp;<span class="uri"><span class="hostname">http://contracts:3000/</span>/api/contracts/<span class="hljs-attribute" title="CONTRACT_ID">CONTRACT_ID</span>/actions/sign</span></div><div class="tabs"><div class="example-names"><span>Requests</span><span class="tab-button">example 1</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span><br><span class="hljs-attribute">Authorization</span>: <span class="hljs-string">Bearer {JWT_TOKEN}</span><br><span class="hljs-attribute">Accept</span>: <span class="hljs-string">application/vnd.jincor+json; version=1</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{}</code></pre><div style="height: 1px;"></div></div></div><div class="tabs"><div class="example-names"><span>Responses</span><span class="tab-button">200</span><span class="tab-button">404</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
@@ -165,18 +170,14 @@
 </span>}</code></pre><div style="height: 1px;"></div></div></div><div class="tabs"><div class="example-names"><span>Responses</span><span class="tab-button">200</span><span class="tab-button">404</span></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
   "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-number">200</span></span>,
   "<span class="hljs-attribute">data</span>": <span class="hljs-value">{
-    "<span class="hljs-attribute">contractId</span>": <span class="hljs-value"><span class="hljs-string">"6174b0f53573874343a4d915d4f5b6876a9a15e5"</span></span>,
-    "<span class="hljs-attribute">employee</span>": <span class="hljs-value">{
-      "<span class="hljs-attribute">id</span>": <span class="hljs-value"><span class="hljs-string">"e316a9e8cba9131b675bfec0f0a662eea5fca517"</span></span>,
-      "<span class="hljs-attribute">fullName</span>": <span class="hljs-value"><span class="hljs-string">"John Doe"</span></span>,
-      "<span class="hljs-attribute">avatar</span>": <span class="hljs-value"><span class="hljs-string">"avatar"</span>
-    </span>}</span>,
-    "<span class="hljs-attribute">signedAt</span>": <span class="hljs-value"><span class="hljs-string">"01/10/2017"</span>
+    "<span class="hljs-attribute">contractId</span>": <span class="hljs-value"><span class="hljs-string">"5a2e651441313204d191b012"</span></span>,
+    "<span class="hljs-attribute">employeeId</span>": <span class="hljs-value"><span class="hljs-string">"123"</span></span>,
+    "<span class="hljs-attribute">signedAt</span>": <span class="hljs-value"><span class="hljs-string">"12/11/2017"</span>
   </span>}
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div><div class="tab"><div><div class="inner"><h5>Headers</h5><pre><code><span class="hljs-attribute">Content-Type</span>: <span class="hljs-string">application/json</span></code></pre><div style="height: 1px;"></div><h5>Body</h5><pre><code>{
   "<span class="hljs-attribute">status</span>": <span class="hljs-value"><span class="hljs-number">404</span>
 </span>}</code></pre><div style="height: 1px;"></div></div></div></div></div></div></div></div><div class="middle"><div id="invoke-contract-method-verify-post" class="action post"><h4 class="action-heading"><div class="name">Verify</div><a href="#invoke-contract-method-verify-post" class="method post">POST</a><code class="uri">/api/contracts/{CONTRACT_ID}/actions/verify</code></h4><div class="title"><strong>URI Parameters</strong><div class="collapse-button show"><span class="close">Hide</span><span class="open">Show</span></div></div><div class="collapse-content"><dl class="inner"><dt>CONTRACT_ID</dt><dd><code>string</code>&nbsp;<span class="required">(required)</span>&nbsp;<p>existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).</p>
-</dd></dl></div></div></div><hr class="split"><div class="middle"><p style="text-align: center;" class="text-muted">Generated by&nbsp;<a href="https://github.com/danielgtaylor/aglio" class="aglio">aglio</a>&nbsp;on 08 Dec 2017</p></div></div></div></div><script>/* eslint-env browser */
+</dd></dl></div></div></div><hr class="split"><div class="middle"><p style="text-align: center;" class="text-muted">Generated by&nbsp;<a href="https://github.com/danielgtaylor/aglio" class="aglio">aglio</a>&nbsp;on 11 Dec 2017</p></div></div></div></div><script>/* eslint-env browser */
 /* eslint quotes: [2, "single"] */
 'use strict';
 
