@@ -67,8 +67,11 @@ container.bind<express.RequestHandler>('TransactionVerifyRequestValidator').toCo
 container.bind<express.RequestHandler>('WalletRegisterRequestValidator').toConstantValue(
   (req: any, res: any, next: any) => validation.WalletRegisterRequestValidator(req, res, next)
 );
-container.bind<express.RequestHandler>('EmploymentScDeployValidator').toConstantValue(
-  (req: any, res: any, next: any) => validation.EmploymentScDeployValidator(req, res, next)
+container.bind<express.RequestHandler>('EmploymentScCreateValidator').toConstantValue(
+  (req: any, res: any, next: any) => validation.EmploymentScCreateValidator(req, res, next)
+);
+container.bind<express.RequestHandler>('EmploymentScVerifyValidator').toConstantValue(
+  (req: any, res: any, next: any) => validation.EmploymentScVerifyValidator(req, res, next)
 );
 
 // controllers

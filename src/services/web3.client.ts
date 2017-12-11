@@ -172,7 +172,7 @@ export class Web3Client {
       to: null,
       amount: '0',
       gas: (await deploy.estimateGas()) + 300000,
-      gasPrice: '21',
+      gasPrice: '100',
       data: deploy.encodeABI()
     };
 

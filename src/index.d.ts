@@ -87,6 +87,7 @@ declare interface InitiateData {
   policy: {
     expiredOn: string
   };
+  payload?: any;
 }
 
 declare interface Result {
