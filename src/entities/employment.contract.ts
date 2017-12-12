@@ -1,5 +1,5 @@
 export interface EmploymentAgreementContract {
-  id: string;
+  _id: string;
   startDate: string;
   createdAt: string;
   signedAt: string;
@@ -25,4 +25,5 @@ export interface EmploymentAgreementContract {
   additionalClauses: string;
   txHash: string;
   contractAddress: string;
+  isSignedByEmployee: boolean;
 }

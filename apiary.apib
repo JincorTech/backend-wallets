@@ -162,12 +162,12 @@ HOST: http://contracts:3000/
                 "status": 404
             }
 
-## Invoke Contract Method: Sign [/api/contracts/{CONTRACT_ID}/actions/sign]
+## Invoke Contract Method: Sign Initiate [/api/contracts/{CONTRACT_ID}/actions/sign/initiate]
 
 + Parameters
     + CONTRACT_ID (string) - existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).
 
-### Sign [POST]
+### Sign Initiate [POST]
 
 + Request (application/json)
     + Headers
@@ -185,13 +185,9 @@ HOST: http://contracts:3000/
             {
                 "status": 200,
                 "data": {
-                    "contractId": "6174b0f53573874343a4d915d4f5b6876a9a15e5",
-                    "employee": {
-                      "id": "e316a9e8cba9131b675bfec0f0a662eea5fca517",
-                      "fullName": "John Doe",
-                      "avatar": "avatar"
-                    },
-                    "verificationId": "1c7d2871-8af6-4e2d-a9a5-b5e7ab41a53e"
+                    "contractId": "5a2fa5cfc869cd06f97d7eee",
+                    "verificationId": "645ad550-755e-4669-bf73-9fab9d657774",
+                    "employeeId": "5fb3c1f0-6df4-41ca-9bc1-547c4bf6d6d6"
                 }
             }
 
@@ -201,7 +197,39 @@ HOST: http://contracts:3000/
                 "status": 404
             }
 
-## Invoke Contract Method: Verify [/api/contracts/{CONTRACT_ID}/actions/verify]
+## Invoke Contract Method: Sign Verify [/api/contracts/{CONTRACT_ID}/actions/sign/verify]
+
++ Parameters
+    + CONTRACT_ID (string) - existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).
+
+### Sign Verify [POST]
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {JWT_TOKEN}
+            Accept: application/vnd.jincor+json; version=1
+
+    + Body
+
+            {
+              "verificationId": "645ad550-755e-4669-bf73-9fab9d657774",
+              "verificationCode": "044160"
+            }
+
++ Response 200 (application/json)
+
+            {
+                "status": 200,
+                "data": {
+                    "contractId": "5a2fb98dfd58a60cda10348c",
+                    "employeeId": "5fb3c1f0-6df4-41ca-9bc1-547c4bf6d6d6",
+                    "txHash": "0xb73bbe364b388bca7ed92af7c3c63e3d075878aabc09ea49581623bca5e8f1ad"
+                }
+            }
+
+
+## Verify contract deploy [/api/contracts/{CONTRACT_ID}/actions/verify]
 
 + Parameters
     + CONTRACT_ID (string) - existing contract id (format like ea77cf482f1b5c97d9bac0ec5603b12a7bae54e2).

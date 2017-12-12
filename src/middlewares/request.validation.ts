@@ -89,7 +89,7 @@ export function EmploymentScCreateValidator(req: Request, res: Response, next: N
   }
 }
 
-export function EmploymentScVerifyValidator(req: Request, res: Response, next: NextFunction) {
+export function VerificationRequiredValidator(req: Request, res: Response, next: NextFunction) {
   const schema = Joi.object().keys({
     verificationId: Joi.string().required(),
     verificationCode: Joi.string().required()

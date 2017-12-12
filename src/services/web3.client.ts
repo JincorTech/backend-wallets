@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import * as bcrypt from 'bcrypt-nodejs';
 
 const Web3 = require('web3');
@@ -9,10 +9,11 @@ const hdkey = require('ethereumjs-wallet/hdkey');
 import config from '../config';
 import 'reflect-metadata';
 import * as lodash from 'lodash';
+import { EventEmitter } from 'events';
 
 export interface TransactionsGroupedByStatuses {
-  success?: Array<string>;
-  failure?: Array<string>;
+  success?: string[];
+  failure?: string[];
 }
 
 /* istanbul ignore next */
@@ -20,7 +21,9 @@ export interface TransactionsGroupedByStatuses {
 export class Web3Client {
   web3: any;
 
-  constructor() {
+  constructor(
+    @inject('Web3EventEmitter') private eventEmitter: EventEmitter
+  ) {
     switch (config.ethRpc.type) {
       case 'ipc':
         this.web3 = new Web3(new Web3.providers.IpcProvider(config.ethRpc.address, net));
@@ -70,6 +73,11 @@ export class Web3Client {
             })
             .on('error', (error) => {
               reject(error);
+            })
+            .then((receipt) => {
+              this.web3.eth.getTransaction(receipt.transactionHash).then((txData) => {
+                this.eventEmitter.emit('newReceipt', receipt, txData);
+              });
             })
             .catch((error) => {
               reject(error);
@@ -178,7 +186,34 @@ export class Web3Client {
 
     return this.sendTransactionByMnemonic(txInput, params.mnemonic, params.salt);
   }
-}
 
-const Web3ClientType = Symbol('Web3ClientInterface');
-export { Web3ClientType };
+  // use this for state changing (non-constant) methods
+  async executeContractMethod(params: ExecuteContractMethodInput): Promise<string> {
+    const contract = new this.web3.eth.Contract(params.abi, params.address);
+    const method = contract.methods[params.methodName](...params.arguments);
+    const estimatedGas = await method.estimateGas({ from: params.from });
+
+    const txInput = {
+      from: params.from,
+      to: params.address,
+      amount: this.web3.utils.toWei(params.amount),
+      gas: estimatedGas + 200000,
+      gasPrice: '100',
+      data: method.encodeABI()
+    };
+
+    return this.sendTransactionByMnemonic(txInput, params.mnemonic, params.salt);
+  }
+
+  // use this to call constant methods (not changing blockchain state)
+  callConstantMethod(params: ExecuteContractConstantMethodInput): Promise<any> {
+    const contract = new this.web3.eth.Contract(params.abi, params.address);
+    const method = contract.methods[params.methodName](...params.arguments);
+
+    return method.call();
+  }
+
+  getChecksumAddress(address: string): string {
+    return this.web3.utils.toChecksumAddress(address);
+  }
+}

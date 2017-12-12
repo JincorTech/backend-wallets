@@ -42,7 +42,8 @@ export class ContractsController {
     }
 
     req.body.createdAt = moment().format('MM/DD/YYYY');
-    req.body.singedAt = null;
+    req.body.signedAt = null;
+    req.body.isSignedByEmployee = false;
     const id = (await this.contractRepository.save(req.body)).ops[0]._id;
 
     let ip = req.header('cf-connecting-ip') || req.ip;
@@ -85,7 +86,7 @@ export class ContractsController {
     '/:contractId/actions/verify',
     'AuthMiddleware',
     'JwtThrottlingMiddleware',
-    'EmploymentScVerifyValidator'
+    'VerificationRequiredValidator'
   )
   async verifyAndDeploy(req: AuthenticatedRequest, res: Response): Promise<void> {
     if (req.user.scope !== 'company-admin') {
@@ -181,6 +182,99 @@ export class ContractsController {
           signedAt: item.signedAt
         };
       })
+    });
+  }
+
+  @httpPost(
+    '/:contractId/actions/sign/initiate',
+    'AuthMiddleware',
+    'JwtThrottlingMiddleware'
+  )
+  async initiateSign(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const splitted = req.user.login.split(':');
+    const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
+    const wallets = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId)).map((item) => {
+      return item.address;
+    });
+
+    const contract = await this.contractRepository.getByIdAndEmployeeWallets(req.params.contractId, wallets);
+
+    if (!contract) {
+      throw Error('Contract is not found');
+    }
+
+    let ip = req.header('cf-connecting-ip') || req.ip;
+
+    if (ip.substr(0, 7) === '::ffff:') {
+      ip = ip.substr(7);
+    }
+
+    const verifyResponse = await this.verificationClient.initiateVerification(EMAIL_VERIFICATION, {
+      consumer: userId,
+      issuer: 'Jincor',
+      template: {
+        fromEmail: 'support@jincor.com',
+        subject: 'Here’s the Code to sign contract',
+        body: initVerificationEmail(ip)
+      },
+      generateCode: {
+        length: 6,
+        symbolSet: ['DIGITS']
+      },
+      policy: {
+        expiredOn: '24:00:00'
+      }
+    });
+
+    res.json({
+      status: 200,
+      data: {
+        contractId: contract._id,
+        verificationId: verifyResponse.verificationId,
+        employeeId: contract.employeeId
+      }
+    });
+  }
+
+  @httpPost(
+    '/:contractId/actions/sign/verify',
+    'AuthMiddleware',
+    'JwtThrottlingMiddleware',
+    'VerificationRequiredValidator'
+  )
+  async verifyAndSign(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const splitted = req.user.login.split(':');
+    const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
+    const wallets = await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId);
+
+    const addresses = wallets.map((item) => {
+      return item.address;
+    });
+    const contract = await this.contractRepository.getByIdAndEmployeeWallets(req.params.contractId, addresses);
+
+    if (!contract) {
+      throw Error('Contract is not found');
+    }
+
+    if (!contract.contractAddress) {
+      throw Error('Contract is not deployed yet');
+    }
+
+    await this.verificationClient.validateVerification(EMAIL_VERIFICATION, req.body.verificationId, {
+      code: req.body.verificationCode
+    });
+
+    const walletToSign = wallets.filter((item) => {
+      return item.address === contract.wallets.employee;
+    }).pop();
+
+    res.json({
+      status: 200,
+      data: {
+        contractId: contract._id,
+        employeeId: contract.employeeId,
+        txHash: await this.deployer.signEmploymentAgreement(contract, walletToSign)
+      }
     });
   }
 }

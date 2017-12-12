@@ -33,6 +33,7 @@
   "dependencies": {
     "@types/lodash": "4.14.85",
     "@types/ws": "3.2.0",
+    "abi-decoder": "1.0.9",
     "bcrypt": "1.0.3",
     "bcrypt-nodejs": "0.0.3",
     "bip39": "^2.4.0",
