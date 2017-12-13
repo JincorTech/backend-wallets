@@ -196,7 +196,7 @@ export class Web3Client {
     const txInput = {
       from: params.from,
       to: params.address,
-      amount: this.web3.utils.toWei(params.amount),
+      amount: params.amount,
       gas: estimatedGas + 200000,
       gasPrice: '100',
       data: method.encodeABI()
