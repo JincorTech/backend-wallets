@@ -6,17 +6,31 @@ import * as moment from 'moment';
 import { Wallet } from '../entities/wallet';
 import { ContractRepository } from './repositories/contract.repository';
 const Web3 = require('web3');
+import { EventEmitter } from 'events';
+const abiDecoder = require('abi-decoder');
 
 export interface ContractsDeployerInterface {
   deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string>;
+  signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string>;
 }
 
 @injectable()
 export class ContractsDeployer implements ContractsDeployerInterface {
   constructor(
     @inject('Web3Client') private web3: Web3Client,
-    @inject('ContractRepository') private contractRepository: ContractRepository
-  ) { }
+    @inject('ContractRepository') private contractRepository: ContractRepository,
+    @inject('Web3EventEmitter') private eventEmitter: EventEmitter
+  ) {
+    this.eventEmitter.on('newReceipt', async(receipt, txData) => {
+      if (receipt.contractAddress) {
+        await this.processContractDeployReceipt(receipt);
+      } else {
+        // now we just expect that we receive this event when contract is signed
+        // need to refactor to properly handle events
+        await this.processTxReceipt(receipt, txData);
+      }
+    });
+  }
 
   deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
     let periodTypeNumerical;
@@ -64,6 +78,55 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     };
 
     return this.web3.deployContract(deployInput);
+  }
+
+  async processContractDeployReceipt(receipt: any): Promise<void> {
+    const contract = await this.contractRepository.getByTxHash(receipt.transactionHash);
+    if (contract) {
+      contract.contractAddress = receipt.contractAddress;
+      await this.contractRepository.save(contract);
+    }
+  }
+
+  async processTxReceipt(receipt: any, txData: any): Promise<void> {
+    const checksumAddress = this.web3.getChecksumAddress(receipt.to);
+    const contract = await this.contractRepository.getByContractAddress(checksumAddress);
+
+    if (contract && receipt.status === '0x1') {
+      abiDecoder.addABI(config.contracts.employmentAgreement.abi);
+      const txInput = abiDecoder.decodeMethod(txData.input);
+      if (txInput.name === 'sign') {
+        contract.isSignedByEmployee = true;
+        contract.signedAt = moment().format('MM/DD/YYYY');
+        await this.contractRepository.save(contract);
+      }
+    }
+  }
+
+  async signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
+    const isSignedInput = {
+      methodName: 'signedByEmployee',
+      address: contract.contractAddress,
+      arguments: [],
+      abi: config.contracts.employmentAgreement.abi
+    };
+    const signed = await this.web3.callConstantMethod(isSignedInput);
+    if (signed === true) {
+      throw Error('Contract is already signed!');
+    }
+
+    const input: ExecuteContractMethodInput = {
+      methodName: 'sign',
+      address: contract.contractAddress,
+      from: wallet.address,
+      arguments: [],
+      abi: config.contracts.employmentAgreement.abi,
+      mnemonic: wallet.mnemonics,
+      salt: wallet.salt,
+      amount: '0'
+    };
+
+    return this.web3.executeContractMethod(input);
   }
 }
 

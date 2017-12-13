@@ -260,3 +260,17 @@ declare interface DeployContractInput {
   constructorArguments: any;
   byteCode: string;
 }
+
+declare interface ExecuteContractConstantMethodInput {
+  address: string;
+  abi: any;
+  methodName: string;
+  arguments: any;
+}
+
+declare interface ExecuteContractMethodInput extends ExecuteContractConstantMethodInput {
+  from: string;
+  mnemonic: string;
+  salt: string;
+  amount: string;
+}

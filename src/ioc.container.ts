@@ -2,9 +2,10 @@ import { CompaniesClient } from './services/companies.client';
 import { Web3Client } from './services/web3.client';
 import { VerificationClient } from './services/verify.client';
 import { WalletRepository, MongoWalletRepository } from './services/repositories/wallet.repository';
-import { interfaces as InversifyInterfaces, Container } from 'inversify';
+import { interfaces as InversifyInterfaces, Container, decorate, injectable } from 'inversify';
 import { interfaces, TYPE } from 'inversify-express-utils';
 import * as express from 'express';
+import { EventEmitter } from 'events';
 
 import * as auths from './services/auth.service';
 import * as validation from './middlewares/request.validation';
@@ -21,6 +22,8 @@ import { PendingTransactionProcessor } from './services/transactions.service';
 import { ContractsController } from './controllers/contracts.controller';
 import { ContractsDeployer, ContractsDeployerInterface, ContractsDeployerType } from './services/contracts.deployer';
 import { ContractRepository, MongoContractRepository } from './services/repositories/contract.repository';
+
+decorate(injectable(), EventEmitter);
 
 let container = new Container();
 
@@ -43,6 +46,7 @@ switch (process.env.MAIL_DRIVER) {
     container.bind<EmailServiceInterface>('EmailService').to(DummyMailService).inSingletonScope();
 }
 
+container.bind<EventEmitter>('Web3EventEmitter').toConstantValue(new EventEmitter());
 container.bind<VerificationClient>('VerificationClient').to(VerificationClient).inSingletonScope();
 container.bind<Web3Client>('Web3Client').to(Web3Client).inSingletonScope();
 container.bind<ContractsClient>('ContractsClient').to(ContractsClient).inSingletonScope();
@@ -70,8 +74,8 @@ container.bind<express.RequestHandler>('WalletRegisterRequestValidator').toConst
 container.bind<express.RequestHandler>('EmploymentScCreateValidator').toConstantValue(
   (req: any, res: any, next: any) => validation.EmploymentScCreateValidator(req, res, next)
 );
-container.bind<express.RequestHandler>('EmploymentScVerifyValidator').toConstantValue(
-  (req: any, res: any, next: any) => validation.EmploymentScVerifyValidator(req, res, next)
+container.bind<express.RequestHandler>('VerificationRequiredValidator').toConstantValue(
+  (req: any, res: any, next: any) => validation.VerificationRequiredValidator(req, res, next)
 );
 
 // controllers

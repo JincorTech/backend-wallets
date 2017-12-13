@@ -8,9 +8,15 @@ export interface ContractRepository {
 
   findOneById(id: string): Promise<any>;
 
+  getByContractAddress(address: string): Promise<EmploymentAgreementContract>;
+
   getByEmployerAddresses(addresses: string[]): Promise<EmploymentAgreementContract[]>;
 
   getByEmployeeAddresses(addresses: string[]): Promise<EmploymentAgreementContract[]>;
+
+  getByTxHash(txHash: string): Promise<EmploymentAgreementContract>;
+
+  getByIdAndEmployeeWallets(id: string, wallets: string[]): Promise<EmploymentAgreementContract>;
 }
 
 @injectable()
@@ -42,7 +48,7 @@ export class MongoContractRepository implements ContractRepository {
       }
     });
 
-    return await cursor.toArray();
+    return cursor.toArray();
   }
 
   async getByEmployeeAddresses(addresses: string[]): Promise<EmploymentAgreementContract[]> {
@@ -52,6 +58,33 @@ export class MongoContractRepository implements ContractRepository {
       }
     });
 
-    return await cursor.toArray();
+    return cursor.toArray();
+  }
+
+  async getByTxHash(txHash: string): Promise<EmploymentAgreementContract> {
+    return (await this.mongoConnector.getDb()).collection('contracts').findOne({
+      txHash
+    });
+  }
+
+  async getByContractAddress(contractAddress: string): Promise<EmploymentAgreementContract> {
+    return (await this.mongoConnector.getDb()).collection('contracts').findOne({
+      contractAddress
+    });
+  }
+
+  async getByIdAndEmployeeWallets(id: string, wallets: string[]): Promise<EmploymentAgreementContract> {
+    return (await this.mongoConnector.getDb()).collection('contracts').findOne({
+      '$and': [
+        {
+          _id: new ObjectID(id)
+        },
+        {
+          'wallets.employee': {
+            '$in': wallets
+          }
+        }
+      ]
+    });
   }
 }
