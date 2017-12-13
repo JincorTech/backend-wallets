@@ -147,7 +147,7 @@ export class ContractsController {
       wallets = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId)).map((item) => {
         return item.address;
       });
-      contracts = await this.contractRepository.getByIdAndEmployeeWallets(req.params.contractId, wallets);
+      contract = await this.contractRepository.getByIdAndEmployeeWallets(req.params.contractId, wallets);
     }
 
     if (!contract) {
