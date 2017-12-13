@@ -17,6 +17,10 @@ export interface ContractRepository {
   getByTxHash(txHash: string): Promise<EmploymentAgreementContract>;
 
   getByIdAndEmployeeWallets(id: string, wallets: string[]): Promise<EmploymentAgreementContract>;
+
+  getByIdAndEmployerWallets(id: string, wallets: string[]): Promise<EmploymentAgreementContract>;
+
+  getAllSignedContracts(): Promise<EmploymentAgreementContract[]>;
 }
 
 @injectable()
@@ -86,5 +90,28 @@ export class MongoContractRepository implements ContractRepository {
         }
       ]
     });
+  }
+
+  async getByIdAndEmployerWallets(id: string, wallets: string[]): Promise<EmploymentAgreementContract> {
+    return (await this.mongoConnector.getDb()).collection('contracts').findOne({
+      '$and': [
+        {
+          _id: new ObjectID(id)
+        },
+        {
+          'wallets.employer': {
+            '$in': wallets
+          }
+        }
+      ]
+    });
+  }
+
+  async getAllSignedContracts(): Promise<EmploymentAgreementContract[]> {
+    const cursor = (await this.mongoConnector.getDb()).collection('contracts').find({
+      isSignedByEmployee: true
+    });
+
+    return cursor.toArray();
   }
 }
