@@ -131,15 +131,18 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     }
   }
 
-  async signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
+  isContractSigned(contract: EmploymentAgreementContract): Promise<boolean> {
     const isSignedInput = {
       methodName: 'signedByEmployee',
       address: contract.contractAddress,
       arguments: [],
       abi: config.contracts.employmentAgreement.abi
     };
-    const signed = await this.web3.callConstantMethod(isSignedInput);
-    if (signed === true) {
+    return this.web3.callConstantMethod(isSignedInput);
+  }
+
+  async signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
+    if ((await this.isContractSigned(contract)) === true) {
       throw Error('Contract is already signed!');
     }
 
@@ -172,6 +175,7 @@ export class ContractsDeployer implements ContractsDeployerInterface {
   }
 
   async recreateQueues() {
+    // recreate queue processors for all signed contracts
     const contracts = await this.contractRepository.getAllSignedContracts();
 
     for (let contract of contracts) {
@@ -179,6 +183,49 @@ export class ContractsDeployer implements ContractsDeployerInterface {
       queue.process((job) => {
         return this.executeEmploymentContract(job);
       });
+      await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+    }
+
+    // check if contracts were already signed in blockchain - update status in Mongo and create cron task
+    const checkNotSignedQueue = new Bull(`check_not_signed_contracts`, queueOpts);
+    checkNotSignedQueue.process((job) => {
+      return this.checkNotSignedContracts(job);
+    });
+    await checkNotSignedQueue.add({}, { repeat: { cron: `* * * * *` } });
+
+    // check if contracts were already deployed to blockchain - set address in Mongo
+    const checkEmptyAddressQueue = new Bull(`check_empty_address_contracts`, queueOpts);
+    checkEmptyAddressQueue.process((job) => {
+      return this.checkEmptyAddressContracts(job);
+    });
+    await checkEmptyAddressQueue.add({}, { repeat: { cron: `* * * * *` } });
+  }
+
+  async checkNotSignedContracts(job: any): Promise<void> {
+    const contracts = await this.contractRepository.getDeployedNotSignedContracts();
+    for (let contract of contracts) {
+      if ((await this.isContractSigned(contract)) === true) {
+        contract.isSignedByEmployee = true;
+        contract.signedAt = moment().format('MM/DD/YYYY');
+        await this.contractRepository.save(contract);
+        const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
+        queue.process((job) => {
+          return this.executeEmploymentContract(job);
+        });
+        await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+      }
+    }
+  }
+
+  async checkEmptyAddressContracts(job: any) {
+    const contracts = await this.contractRepository.getContractsWithTxHashButNoAddress();
+    for (let contract of contracts) {
+      const receipt = await this.web3.getTxReceipt(contract.txHash);
+
+      if (receipt && receipt.contractAddress) {
+        contract.contractAddress = receipt.contractAddress;
+        await this.contractRepository.save(contract);
+      }
     }
   }
 }

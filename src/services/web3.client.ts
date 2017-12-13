@@ -216,4 +216,8 @@ export class Web3Client {
   getChecksumAddress(address: string): string {
     return this.web3.utils.toChecksumAddress(address);
   }
+
+  getTxReceipt(txHash: string): Promise<any> {
+    return this.web3.eth.getTransactionReceipt(txHash);
+  }
 }

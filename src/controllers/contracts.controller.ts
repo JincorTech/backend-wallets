@@ -106,6 +106,10 @@ export class ContractsController {
       throw Error('Contract is not found');
     }
 
+    if (contract.txHash) {
+      throw Error('Contract was already deployed');
+    }
+
     let corporateWallet = (await this.walletRepository.getAllCorporateByCompanyId(companyId))
       .filter((w) => w.address === contract.wallets.employer).pop();
 
