@@ -106,6 +106,10 @@ export class ContractsController {
       throw Error('Contract is not found');
     }
 
+    if (contract.txHash) {
+      throw Error('Contract was already deployed');
+    }
+
     let corporateWallet = (await this.walletRepository.getAllCorporateByCompanyId(companyId))
       .filter((w) => w.address === contract.wallets.employer).pop();
 
@@ -132,11 +136,23 @@ export class ContractsController {
     'JwtThrottlingMiddleware'
   )
   async getContract(req: AuthenticatedRequest, res: Response): Promise<void> {
-    if (req.user.scope !== 'company-admin') {
-      throw new CompanyAdminOnly('Only company admin is allowed to perform this operation');
-    }
+    let wallets;
+    let contract;
 
-    const contract = await this.contractRepository.findOneById(req.params.contractId);
+    const splitted = req.user.login.split(':');
+    const [companyId, userId] = [splitted[0], splitted.slice(1).join('')];
+
+    if (req.user.scope === 'company-admin') {
+      wallets = (await this.walletRepository.getAllCorporateByCompanyId(companyId)).map((item) => {
+        return item.address;
+      });
+      contract = await this.contractRepository.getByIdAndEmployerWallets(req.params.contractId, wallets);
+    } else {
+      wallets = (await this.walletRepository.getAllByUserIdAndCompanyId(userId, companyId)).map((item) => {
+        return item.address;
+      });
+      contract = await this.contractRepository.getByIdAndEmployeeWallets(req.params.contractId, wallets);
+    }
 
     if (!contract) {
       throw Error('Contract is not found');

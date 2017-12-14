@@ -8,6 +8,26 @@ import { ContractRepository } from './repositories/contract.repository';
 const Web3 = require('web3');
 import { EventEmitter } from 'events';
 const abiDecoder = require('abi-decoder');
+import * as Bull from 'bull';
+import { WalletRepository } from './repositories/wallet.repository';
+import * as Redis from 'ioredis';
+
+const client = new Redis(config.redis.url);
+const subscriber = new Redis(config.redis.url);
+
+// https://github.com/OptimalBits/bull/blob/master/PATTERNS.md#reusing-redis-connections
+const queueOpts = {
+  createClient: function(type) {
+    switch (type) {
+      case 'client':
+        return client;
+      case 'subscriber':
+        return subscriber;
+      default:
+        return new Redis(config.redis.url);
+    }
+  }
+};
 
 export interface ContractsDeployerInterface {
   deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string>;
@@ -19,7 +39,8 @@ export class ContractsDeployer implements ContractsDeployerInterface {
   constructor(
     @inject('Web3Client') private web3: Web3Client,
     @inject('ContractRepository') private contractRepository: ContractRepository,
-    @inject('Web3EventEmitter') private eventEmitter: EventEmitter
+    @inject('Web3EventEmitter') private eventEmitter: EventEmitter,
+    @inject('WalletRepository') private walletRepository: WalletRepository
   ) {
     this.eventEmitter.on('newReceipt', async(receipt, txData) => {
       if (receipt.contractAddress) {
@@ -30,6 +51,8 @@ export class ContractsDeployer implements ContractsDeployerInterface {
         await this.processTxReceipt(receipt, txData);
       }
     });
+
+    this.recreateQueues();
   }
 
   deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
@@ -99,19 +122,27 @@ export class ContractsDeployer implements ContractsDeployerInterface {
         contract.isSignedByEmployee = true;
         contract.signedAt = moment().format('MM/DD/YYYY');
         await this.contractRepository.save(contract);
+        const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
+        queue.process((job) => {
+          return this.executeEmploymentContract(job);
+        });
+        await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
       }
     }
   }
 
-  async signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
+  isContractSigned(contract: EmploymentAgreementContract): Promise<boolean> {
     const isSignedInput = {
       methodName: 'signedByEmployee',
       address: contract.contractAddress,
       arguments: [],
       abi: config.contracts.employmentAgreement.abi
     };
-    const signed = await this.web3.callConstantMethod(isSignedInput);
-    if (signed === true) {
+    return this.web3.callConstantMethod(isSignedInput);
+  }
+
+  async signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string> {
+    if ((await this.isContractSigned(contract)) === true) {
       throw Error('Contract is already signed!');
     }
 
@@ -127,6 +158,75 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     };
 
     return this.web3.executeContractMethod(input);
+  }
+
+  async executeEmploymentContract(job): Promise<string> {
+    const contract: EmploymentAgreementContract = job.data;
+    const employerWallet = await this.walletRepository.getByAddress(contract.wallets.employer);
+    const txInput: TransactionInput = {
+      from: employerWallet.address,
+      to: contract.contractAddress,
+      gas: 200000,
+      gasPrice: '100',
+      amount: contract.compensation.salaryAmount.amount
+    };
+
+    return this.web3.sendTransactionByMnemonic(txInput, employerWallet.mnemonics, employerWallet.salt);
+  }
+
+  async recreateQueues() {
+    // recreate queue processors for all signed contracts
+    const contracts = await this.contractRepository.getAllSignedContracts();
+
+    for (let contract of contracts) {
+      const queue = new Bull(`execute_employment_contract_${ contract._id }`, queueOpts);
+      queue.process((job) => {
+        return this.executeEmploymentContract(job);
+      });
+      await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+    }
+
+    // check if contracts were already signed in blockchain - update status in Mongo and create cron task
+    const checkNotSignedQueue = new Bull(`check_not_signed_contracts`, queueOpts);
+    checkNotSignedQueue.process((job) => {
+      return this.checkNotSignedContracts(job);
+    });
+    await checkNotSignedQueue.add({}, { repeat: { cron: `* * * * *` } });
+
+    // check if contracts were already deployed to blockchain - set address in Mongo
+    const checkEmptyAddressQueue = new Bull(`check_empty_address_contracts`, queueOpts);
+    checkEmptyAddressQueue.process((job) => {
+      return this.checkEmptyAddressContracts(job);
+    });
+    await checkEmptyAddressQueue.add({}, { repeat: { cron: `* * * * *` } });
+  }
+
+  async checkNotSignedContracts(job: any): Promise<void> {
+    const contracts = await this.contractRepository.getDeployedNotSignedContracts();
+    for (let contract of contracts) {
+      if ((await this.isContractSigned(contract)) === true) {
+        contract.isSignedByEmployee = true;
+        contract.signedAt = moment().format('MM/DD/YYYY');
+        await this.contractRepository.save(contract);
+        const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
+        queue.process((job) => {
+          return this.executeEmploymentContract(job);
+        });
+        await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+      }
+    }
+  }
+
+  async checkEmptyAddressContracts(job: any) {
+    const contracts = await this.contractRepository.getContractsWithTxHashButNoAddress();
+    for (let contract of contracts) {
+      const receipt = await this.web3.getTxReceipt(contract.txHash);
+
+      if (receipt && receipt.contractAddress) {
+        contract.contractAddress = receipt.contractAddress;
+        await this.contractRepository.save(contract);
+      }
+    }
   }
 }
 

@@ -10,6 +10,7 @@ export interface WalletRepository {
   save(wallet: Wallet & {_id?: any}): Promise<any>;
   getAllCorporateByCompanyId(companyId: string): Promise<Wallet[]>;
   getAllByUserIdAndCompanyId(userId: string, companyId: string): Promise<Wallet[]>;
+  getByAddress(address: string): Promise<Wallet>;
 }
 
 @injectable()
@@ -104,5 +105,11 @@ export class MongoWalletRepository implements WalletRepository {
         wallets[walletIndex].transactions.push(t);
       });
     }
+  }
+
+  async getByAddress(address: string): Promise<Wallet> {
+    return (await this.mongoConnector.getDb()).collection('wallets').findOne({
+      address
+    });
   }
 }
