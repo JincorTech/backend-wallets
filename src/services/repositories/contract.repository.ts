@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import { MongoDbConnector } from './mongodb.connector.service';
 import { EmploymentAgreementContract } from '../../entities/employment.contract';
 import { ObjectID } from 'mongodb';
+import { CONTRACT_STATUS_DEPLOY_PENDING, CONTRACT_STATUS_SIGN_PENDING } from '../contracts.deployer';
 
 export interface ContractRepository {
   save(contract: EmploymentAgreementContract): Promise<any>;
@@ -22,9 +23,9 @@ export interface ContractRepository {
 
   getAllSignedContracts(): Promise<EmploymentAgreementContract[]>;
 
-  getDeployedNotSignedContracts(): Promise<EmploymentAgreementContract[]>;
+  getSignPendingContracts(): Promise<EmploymentAgreementContract[]>;
 
-  getContractsWithTxHashButNoAddress(): Promise<EmploymentAgreementContract[]>;
+  getDeployPendingContracts(): Promise<EmploymentAgreementContract[]>;
 }
 
 @injectable()
@@ -119,39 +120,17 @@ export class MongoContractRepository implements ContractRepository {
     return cursor.toArray();
   }
 
-  async getDeployedNotSignedContracts(): Promise<EmploymentAgreementContract[]> {
+  async getSignPendingContracts(): Promise<EmploymentAgreementContract[]> {
     const cursor = (await this.mongoConnector.getDb()).collection('contracts').find({
-      '$and': [
-        {
-          contractAddress: {
-            '$exists': true,
-            '$ne': null
-          }
-        },
-        {
-          isSignedByEmployee: false
-        }
-      ]
+      status: CONTRACT_STATUS_SIGN_PENDING
     });
 
     return cursor.toArray();
   }
 
-  async getContractsWithTxHashButNoAddress(): Promise<EmploymentAgreementContract[]> {
+  async getDeployPendingContracts(): Promise<EmploymentAgreementContract[]> {
     const cursor = (await this.mongoConnector.getDb()).collection('contracts').find({
-      '$and': [
-        {
-          txHash: {
-            '$exists': true,
-            '$ne': null
-          }
-        },
-        {
-          contractAddress: {
-            '$exists': false
-          }
-        }
-      ]
+      status: CONTRACT_STATUS_DEPLOY_PENDING
     });
 
     return cursor.toArray();

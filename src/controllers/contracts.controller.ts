@@ -5,7 +5,12 @@ import 'reflect-metadata';
 import { AuthenticatedRequest } from '../interfaces';
 import { CompanyAdminOnly } from '../exceptions/exceptions';
 import { WalletRepository } from '../services/repositories/wallet.repository';
-import { ContractsDeployerInterface, ContractsDeployerType } from '../services/contracts.deployer';
+import {
+  CONTRACT_STATUS_DEPLOY_PENDING,
+  CONTRACT_STATUS_DRAFT,
+  ContractsDeployerInterface,
+  ContractsDeployerType
+} from '../services/contracts.deployer';
 import { EMAIL_VERIFICATION, VerificationClient } from '../services/verify.client';
 import initVerificationEmail from '../emails/init_verification';
 import { ContractRepository } from '../services/repositories/contract.repository';
@@ -44,6 +49,7 @@ export class ContractsController {
     req.body.createdAt = moment().format('MM/DD/YYYY');
     req.body.signedAt = null;
     req.body.isSignedByEmployee = false;
+    req.body.status = CONTRACT_STATUS_DRAFT;
     const id = (await this.contractRepository.save(req.body)).ops[0]._id;
 
     let ip = req.header('cf-connecting-ip') || req.ip;
@@ -118,6 +124,7 @@ export class ContractsController {
     }
 
     contract.txHash = await this.deployer.deployEmploymentAgreement(contract, corporateWallet);
+    contract.status = CONTRACT_STATUS_DEPLOY_PENDING;
     await this.contractRepository.save(contract);
 
     res.json({
@@ -195,7 +202,8 @@ export class ContractsController {
           contractId: item._id,
           employeeId: item.employeeId,
           createdAt: item.createdAt,
-          signedAt: item.signedAt
+          signedAt: item.signedAt,
+          status: item.status
         };
       })
     });

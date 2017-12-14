@@ -24,6 +24,8 @@ export interface EmploymentAgreementContract {
   jobDescription: string;
   additionalClauses: string;
   txHash: string;
+  signTxHash: string;
   contractAddress: string;
   isSignedByEmployee: boolean;
+  status: string;
 }
