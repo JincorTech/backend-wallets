@@ -2,7 +2,11 @@ import { injectable, inject } from 'inversify';
 import { MongoDbConnector } from './mongodb.connector.service';
 import { EmploymentAgreementContract } from '../../entities/employment.contract';
 import { ObjectID } from 'mongodb';
-import { CONTRACT_STATUS_DEPLOY_PENDING, CONTRACT_STATUS_SIGN_PENDING } from '../contracts.deployer';
+import {
+  CONTRACT_STATUS_DEPLOY_PENDING,
+  CONTRACT_STATUS_SIGN_PENDING,
+  CONTRACT_STATUS_SIGNED
+} from '../contracts.deployer';
 
 export interface ContractRepository {
   save(contract: EmploymentAgreementContract): Promise<any>;
@@ -114,7 +118,7 @@ export class MongoContractRepository implements ContractRepository {
 
   async getAllSignedContracts(): Promise<EmploymentAgreementContract[]> {
     const cursor = (await this.mongoConnector.getDb()).collection('contracts').find({
-      isSignedByEmployee: true
+      status: CONTRACT_STATUS_SIGNED
     });
 
     return cursor.toArray();

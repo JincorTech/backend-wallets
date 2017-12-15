@@ -35,7 +35,7 @@ const CONTRACT_STATUS_DEPLOY_FAILED = 'deployFailed';
 const CONTRACT_STATUS_DEPLOYED = 'deployed';
 export const CONTRACT_STATUS_SIGN_PENDING = 'signPending';
 const CONTRACT_STATUS_SIGN_FAILED = 'signFailed';
-const CONTRACT_STATUS_SIGNED = 'signed';
+export const CONTRACT_STATUS_SIGNED = 'signed';
 
 export interface ContractsDeployerInterface {
   deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string>;
@@ -78,7 +78,7 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     }
 
     const periodStartDate = input.periodStartDate ? moment(input.periodStartDate, 'MM/DD/YYYY').unix().toString() : 0;
-    const periodEndDate = input.periodStartDate ? moment(input.periodStartDate, 'MM/DD/YYYY').unix().toString() : 0;
+    const periodEndDate = input.periodEndDate ? moment(input.periodEndDate, 'MM/DD/YYYY').unix().toString() : 0;
 
     const paymentDay = input.compensation.dayOfPayments || 1;
     let momentToStart = moment().date(paymentDay).hour(0).minute(0).second(0);
@@ -133,14 +133,9 @@ export class ContractsDeployer implements ContractsDeployerInterface {
       const txInput = abiDecoder.decodeMethod(txData.input);
       if (txInput.name === 'sign') {
         if (receipt.status === '0x1') {
-          contract.isSignedByEmployee = true;
           contract.signedAt = moment().format('MM/DD/YYYY');
           contract.status = CONTRACT_STATUS_SIGNED;
-          const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
-          queue.process((job) => {
-            return this.executeEmploymentContract(job);
-          });
-          await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+          await this.createCronQueue(contract);
         } else {
           contract.status = CONTRACT_STATUS_SIGN_FAILED;
         }
@@ -200,6 +195,12 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     // recreate queue processors for all signed contracts
     const contracts = await this.contractRepository.getAllSignedContracts();
 
+    // that's a dirty hack to allow creation of queues for contracts periodical execution
+    // need to find some better solution
+    // however Bull developers themselves did not find this yet
+    // https://github.com/OptimalBits/bull/issues/738
+    EventEmitter.defaultMaxListeners = 10000;
+
     for (let contract of contracts) {
       const queue = new Bull(`execute_employment_contract_${ contract._id }`, queueOpts);
       queue.process((job) => {
@@ -228,18 +229,12 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     for (let contract of contracts) {
       if ((await this.isContractSigned(contract)) === true) {
 
-        contract.isSignedByEmployee = true;
         contract.signedAt = moment().format('MM/DD/YYYY');
         contract.status = CONTRACT_STATUS_SIGNED;
 
         await this.contractRepository.save(contract);
 
-        const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
-        queue.process((job) => {
-          return this.executeEmploymentContract(job);
-        });
-        await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
-
+        await this.createCronQueue(contract);
       } else {
         const receipt = await this.web3.getTxReceipt(contract.signTxHash);
         if (receipt && receipt.status !== '0x1') {
@@ -265,6 +260,24 @@ export class ContractsDeployer implements ContractsDeployerInterface {
         await this.contractRepository.save(contract);
       }
     }
+  }
+
+  async createCronQueue(contract: EmploymentAgreementContract): Promise<void> {
+    const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
+    queue.process((job) => {
+      return this.executeEmploymentContract(job);
+    });
+    const queueOptions: Bull.JobOptions = {
+      repeat: {
+        cron: `0 0 ${ contract.compensation.dayOfPayments } * *`
+      }
+    };
+
+    if (contract.periodOfAgreement === 'fixed' && contract.periodEndDate) {
+      queueOptions.repeat.endDate = moment(contract.periodEndDate, 'MM/DD/YYYY').toDate();
+    }
+
+    await queue.add(contract, queueOptions);
   }
 }
 
