@@ -29,6 +29,14 @@ const queueOpts = {
   }
 };
 
+export const CONTRACT_STATUS_DRAFT = 'draft';
+export const CONTRACT_STATUS_DEPLOY_PENDING = 'deployPending';
+const CONTRACT_STATUS_DEPLOY_FAILED = 'deployFailed';
+const CONTRACT_STATUS_DEPLOYED = 'deployed';
+export const CONTRACT_STATUS_SIGN_PENDING = 'signPending';
+const CONTRACT_STATUS_SIGN_FAILED = 'signFailed';
+const CONTRACT_STATUS_SIGNED = 'signed';
+
 export interface ContractsDeployerInterface {
   deployEmploymentAgreement(input: EmploymentAgreementContract, wallet: Wallet): Promise<string>;
   signEmploymentAgreement(contract: EmploymentAgreementContract, wallet: Wallet): Promise<string>;
@@ -107,6 +115,11 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     const contract = await this.contractRepository.getByTxHash(receipt.transactionHash);
     if (contract) {
       contract.contractAddress = receipt.contractAddress;
+      if (receipt.status === '0x1') {
+        contract.status = CONTRACT_STATUS_DEPLOYED;
+      } else {
+        contract.status = CONTRACT_STATUS_DEPLOY_FAILED;
+      }
       await this.contractRepository.save(contract);
     }
   }
@@ -115,18 +128,24 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     const checksumAddress = this.web3.getChecksumAddress(receipt.to);
     const contract = await this.contractRepository.getByContractAddress(checksumAddress);
 
-    if (contract && receipt.status === '0x1') {
+    if (contract) {
       abiDecoder.addABI(config.contracts.employmentAgreement.abi);
       const txInput = abiDecoder.decodeMethod(txData.input);
       if (txInput.name === 'sign') {
-        contract.isSignedByEmployee = true;
-        contract.signedAt = moment().format('MM/DD/YYYY');
+        if (receipt.status === '0x1') {
+          contract.isSignedByEmployee = true;
+          contract.signedAt = moment().format('MM/DD/YYYY');
+          contract.status = CONTRACT_STATUS_SIGNED;
+          const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
+          queue.process((job) => {
+            return this.executeEmploymentContract(job);
+          });
+          await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+        } else {
+          contract.status = CONTRACT_STATUS_SIGN_FAILED;
+        }
+
         await this.contractRepository.save(contract);
-        const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
-        queue.process((job) => {
-          return this.executeEmploymentContract(job);
-        });
-        await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
       }
     }
   }
@@ -157,7 +176,10 @@ export class ContractsDeployer implements ContractsDeployerInterface {
       amount: '0'
     };
 
-    return this.web3.executeContractMethod(input);
+    contract.signTxHash = await this.web3.executeContractMethod(input);
+    contract.status = CONTRACT_STATUS_SIGN_PENDING;
+    await this.contractRepository.save(contract);
+    return contract.signTxHash;
   }
 
   async executeEmploymentContract(job): Promise<string> {
@@ -193,37 +215,53 @@ export class ContractsDeployer implements ContractsDeployerInterface {
     });
     await checkNotSignedQueue.add({}, { repeat: { cron: `* * * * *` } });
 
-    // check if contracts were already deployed to blockchain - set address in Mongo
-    const checkEmptyAddressQueue = new Bull(`check_empty_address_contracts`, queueOpts);
-    checkEmptyAddressQueue.process((job) => {
-      return this.checkEmptyAddressContracts(job);
+    // check if pending contracts were already deployed to blockchain - set address in Mongo
+    const checkDeployPendingQueue = new Bull(`check_deploy_pending_contracts`, queueOpts);
+    checkDeployPendingQueue.process((job) => {
+      return this.checkDeployPendingContracts(job);
     });
-    await checkEmptyAddressQueue.add({}, { repeat: { cron: `* * * * *` } });
+    await checkDeployPendingQueue.add({}, { repeat: { cron: `* * * * *` } });
   }
 
   async checkNotSignedContracts(job: any): Promise<void> {
-    const contracts = await this.contractRepository.getDeployedNotSignedContracts();
+    const contracts = await this.contractRepository.getSignPendingContracts();
     for (let contract of contracts) {
       if ((await this.isContractSigned(contract)) === true) {
+
         contract.isSignedByEmployee = true;
         contract.signedAt = moment().format('MM/DD/YYYY');
+        contract.status = CONTRACT_STATUS_SIGNED;
+
         await this.contractRepository.save(contract);
+
         const queue = new Bull(`execute_employment_contract_${ contract._id }`, config.redis.url);
         queue.process((job) => {
           return this.executeEmploymentContract(job);
         });
         await queue.add(contract, { repeat: { cron: `0 0 ${ contract.compensation.dayOfPayments } * *` } });
+
+      } else {
+        const receipt = await this.web3.getTxReceipt(contract.signTxHash);
+        if (receipt && receipt.status !== '0x1') {
+          contract.status = CONTRACT_STATUS_SIGN_FAILED;
+          await this.contractRepository.save(contract);
+        }
       }
     }
   }
 
-  async checkEmptyAddressContracts(job: any) {
-    const contracts = await this.contractRepository.getContractsWithTxHashButNoAddress();
+  async checkDeployPendingContracts(job: any) {
+    const contracts = await this.contractRepository.getDeployPendingContracts();
     for (let contract of contracts) {
       const receipt = await this.web3.getTxReceipt(contract.txHash);
 
-      if (receipt && receipt.contractAddress) {
-        contract.contractAddress = receipt.contractAddress;
+      if (receipt) {
+        if (receipt.status === '0x1' && receipt.contractAddress) {
+          contract.contractAddress = receipt.contractAddress;
+          contract.status = CONTRACT_STATUS_DEPLOYED;
+        } else {
+          contract.status = CONTRACT_STATUS_DEPLOY_FAILED;
+        }
         await this.contractRepository.save(contract);
       }
     }
