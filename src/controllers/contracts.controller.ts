@@ -48,7 +48,6 @@ export class ContractsController {
 
     req.body.createdAt = moment().format('MM/DD/YYYY');
     req.body.signedAt = null;
-    req.body.isSignedByEmployee = false;
     req.body.status = CONTRACT_STATUS_DRAFT;
     const id = (await this.contractRepository.save(req.body)).ops[0]._id;
 

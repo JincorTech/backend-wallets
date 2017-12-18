@@ -26,6 +26,5 @@ export interface EmploymentAgreementContract {
   txHash: string;
   signTxHash: string;
   contractAddress: string;
-  isSignedByEmployee: boolean;
   status: string;
 }
